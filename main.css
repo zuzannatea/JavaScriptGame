@@ -3,7 +3,4 @@ body{
 }
 canvas{
     background-color: black;
-    width: 90vw;
-    height: 90vh;
-    margin-left: auto;
 }

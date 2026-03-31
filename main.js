@@ -1,3 +1,6 @@
+import { all_entities, Enemy, Player, is_colliding, randint } from './modules/entities.js';
+
+
 let canvas;
 let context;
 
@@ -42,11 +45,15 @@ document.addEventListener("DOMContentLoaded", init, false);
 function init(){
     canvas = document.querySelector("canvas");
     context = canvas.getContext("2d");
+
+    canvas.width = window.screen.availWidth;
+    canvas.height = window.screen.availHeight;
+
     window.addEventListener("keydown",activate,false);
     window.addEventListener("keyup",deactivate,false);
     draw();
-    enemy = new Enemy(canvas.width, canvas.height);
-    player = new Player(canvas.width, canvas.height);
+    enemy = add_entity(Enemy);
+    player = add_entity(Player);
 
 }
 
@@ -62,8 +69,7 @@ function draw(){
     
 
     if (enemy.health <= 0){
-        enemy = 0;
-        console.log("DAGHJSK");
+        enemy = add_entity(Enemy);
     }
 
 
@@ -74,7 +80,6 @@ function draw(){
     context.fillStyle = "red";
     context.fillRect(player.x, player.y - 10, player.health/player.length, 5);
 
-    console.log(enemy.x,enemy.y, enemy.length, enemy.height);
     context.fillStyle = "orange";
     context.fillRect(enemy.x, enemy.y - 10, enemy.health/enemy.length, 5);
     context.fillStyle = "yellow";
@@ -84,7 +89,7 @@ function draw(){
         enemy.x = enemy.x - 5;
         enemy.health = enemy.health - 10;
     }
-
+    enemy.wander();
 
     if (player.x + player.length >= canvas.width ||
         player.x < 0 || 
@@ -107,9 +112,6 @@ function draw(){
     }
 }
 
-function randint(min,max){
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 
 function activate(event){
@@ -157,9 +159,17 @@ function deactivate(event){
     }
 
 }
+function add_entity(entity_class){
+    let entity = new entity_class(canvas.width, canvas.height);
+    all_entities.push(entity);
+    return entity;
 
-function add_entity(){
-    
+}
+function remove_entity(entity_instance){
+    let entity = new entity_class(canvas.width, canvas.height);
+    all_entities.push(entity);
+    return entity;
+
 }
 
 

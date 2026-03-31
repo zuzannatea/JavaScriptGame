@@ -1,9 +1,13 @@
-all_entities = [];
+let all_entities = [];
+
+class Entity{
+  
+}
 
 class Enemy {
   constructor(width, height) {
-    this.x = randint(0, width);
-    this.y = randint(0, height);
+    this.x = randint(10, width - 10);
+    this.y = randint(10, height - 10);
     this.length = 10;
     this.height = 15;
     this.xChange = 10;
@@ -11,7 +15,7 @@ class Enemy {
     this.health = 50;
   }
   wander(){
-    chanceOfMovement = randint(0,10);
+    let chanceOfMovement = randint(0,10);
     if (chanceOfMovement > 7){
         let xMove = randint(-1,1) * this.xChange;
         let yMove = randint(-1,1) * this.yChange;
@@ -37,8 +41,8 @@ class Enemy {
 
 class Player {
   constructor(width, height) {
-    this.x = randint(0, width);
-    this.y = randint(0, height);
+    this.x = randint(10, width - 10);
+    this.y = randint(15, height - 15);
     this.length = 10;
     this.height = 15;
     this.xChange = 10;
@@ -60,3 +64,9 @@ function is_colliding(object1, object2){
         return true;
     }
 }
+
+function randint(min,max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export { all_entities, Enemy, Player, is_colliding, randint };
