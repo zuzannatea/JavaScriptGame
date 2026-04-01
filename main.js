@@ -52,7 +52,8 @@ function draw(){
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    context.fillStyle = "cyan";
+    if (isAttacking){context.fillStyle = "purple";}
+    else{context.fillStyle = "cyan";}
     context.fillRect(player.x, player.y, player.length, player.height);
     context.fillStyle = "red";
     context.fillRect(player.x, player.y - 10, player.health/player.length, 5);
