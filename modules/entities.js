@@ -1,29 +1,14 @@
 let all_entities = [];
 
 class Entity{
-  
-}
-
-class Enemy {
-  constructor(width, height) {
-    this.x = randint(10, width - 10);
-    this.y = randint(10, height - 10);
-    this.length = 10;
-    this.height = 15;
+  constructor() {
+    this.x;
+    this.y;
+    this.length = 20;
+    this.height = 35;
     this.xChange = 10;
     this.yChange = 10;
-    this.health = 50;
-  }
-  wander(){
-    let chanceOfMovement = randint(0,10);
-    if (chanceOfMovement > 7){
-        let xMove = randint(-1,1) * this.xChange;
-        let yMove = randint(-1,1) * this.yChange;
-        this.move_by(xMove,yMove);
-        if (this.entity_colliding()){
-            this.move_by(-xMove,-yMove);
-        }
-    }
+    this.health;
   }
   move_by(xMove,yMove){
         this.x = this.x + xMove;
@@ -37,17 +22,35 @@ class Enemy {
     }
     return false;
   }
+
 }
 
-class Player {
+class Enemy extends Entity{
   constructor(width, height) {
+    super();
+    this.x = randint(10, width - 10);
+    this.y = randint(10, height - 10);
+    this.health = 50;
+  }
+  wander(){
+    let chanceOfMovement = randint(0,10);
+    if (chanceOfMovement > 7){
+        let xMove = randint(-1,1) * this.xChange;
+        let yMove = randint(-1,1) * this.yChange;
+        this.move_by(xMove,yMove);
+        if (this.entity_colliding()){
+            this.move_by(-xMove,-yMove);
+        }
+    }
+  }
+}
+
+class Player extends Entity{
+  constructor(width, height) {
+    super();
     this.x = randint(10, width - 10);
     this.y = randint(15, height - 15);
-    this.length = 10;
-    this.height = 15;
-    this.xChange = 10;
-    this.yChange = 10;
-    this.health = 50;
+    this.health = 100;
     this.score = 0;
     this.extraMoves = [];
   }

@@ -8,29 +8,7 @@ let fpsInterval = 100 / 30;
 let now;
 let then = Date.now();
 
-let obstacles = [];
 let request;
-/* let player = {
-    x : 0,
-    y : 150,
-    length : 10,
-    height : 15,
-    xChange : 10,
-    yChange : 10,
-    extraMoves : [],
-    health : 100,
-    score : 0
-};
- *//* let enemy = {
-    x : 100,
-    y : 150,
-    length : 10,
-    height : 15,
-    xChange : 10,
-    yChange : 10,
-    health : 50
-};
- */
 let enemy;
 let player;
 
@@ -166,12 +144,26 @@ function add_entity(entity_class){
 
 }
 function remove_entity(entity_instance){
-    let entity = new entity_class(canvas.width, canvas.height);
-    all_entities.push(entity);
-    return entity;
-
+    let index = all_entities.indexOf(entity_instance);
+    if (index > -1){
+        all_entities.splice(index,1);
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
+function remove_item(item,array){
+    let index = array.indexOf(item);
+    if (index === -1){
+        return array;
+    }
+    else{
+        array.splice(index,1);
+        return array;
+    }
+}
 
 function stop(){
     window.cancelAnimationFrame(request);
