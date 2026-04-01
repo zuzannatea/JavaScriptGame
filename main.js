@@ -32,7 +32,6 @@ function init(){
     draw();
     enemy = add_entity(Enemy);
     player = add_entity(Player);
-
 }
 
 
@@ -69,24 +68,17 @@ function draw(){
     }
     enemy.wander();
 
-    if (player.x + player.length >= canvas.width ||
-        player.x < 0 || 
-        player.y - player.height < 0 || 
-        player.y + player.height >= canvas.height){
-            stop();
-            return;
-    }
     if (moveRight){
-        player.x = player.x + player.xChange;
+        player.try_move(player.xChange,0);
     }
     if (moveLeft){
-        player.x = player.x - player.xChange;
+        player.try_move(-player.xChange,0);
     }
     if (moveUp){
-        player.y = player.y - player.yChange;
+        player.try_move(0,-player.yChange);
     }
     if (moveDown){
-        player.y = player.y + player.yChange;
+        player.try_move(0,player.yChange);
     }
 }
 
@@ -141,7 +133,6 @@ function add_entity(entity_class){
     let entity = new entity_class(canvas.width, canvas.height);
     all_entities.push(entity);
     return entity;
-
 }
 function remove_entity(entity_instance){
     let index = all_entities.indexOf(entity_instance);

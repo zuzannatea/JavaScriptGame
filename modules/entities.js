@@ -1,7 +1,9 @@
 let all_entities = [];
 
 class Entity{
-  constructor() {
+  constructor(width, height) {
+    this.canvas = [width, height];
+	this.width = width;
     this.x;
     this.y;
     this.length = 20;
@@ -10,13 +12,31 @@ class Entity{
     this.yChange = 10;
     this.health;
   }
+  try_move(xMove,yMove){
+	if (yMove === undefined){yMove = 0;}
+	if (xMove === undefined){xMove = 0;}
+	if (this.x + this.length + xMove >= this.canvas[0] ||
+        this.x + xMove < 0 ||
+        this.y + this.height + yMove >= this.canvas[1] ||
+        this.y + yMove < 0){
+    		return false;
+    }
+	this.move_by(xMove,yMove);
+    //works till here
+    if (this.entity_colliding()){
+        this.move_by(-xMove,-yMove);
+        return false; 
+    }
+    return true;
+  }
   move_by(xMove,yMove){
+
         this.x = this.x + xMove;
         this.y = this.y + yMove;
   }
   entity_colliding(){
     for (let entity of all_entities){
-        if (is_colliding(this,entity)){
+        if (is_colliding(this,entity) && this != entity){
             return true;
         }
     }
@@ -28,19 +48,25 @@ class Entity{
 class Enemy extends Entity{
   constructor(width, height) {
     super();
+	this.canvas = [width, height];
     this.x = randint(10, width - 10);
     this.y = randint(10, height - 10);
+	this.target = [];
     this.health = 50;
   }
+  pick_a_point(){
+	return [randint(0,this.canvas[0]), randint(0,this.canvas[1])];
+  }
   wander(){
+	if (this.target.length === 0){
+		this.target = this.pick_a_point();
+	}
+	
     let chanceOfMovement = randint(0,10);
     if (chanceOfMovement > 7){
         let xMove = randint(-1,1) * this.xChange;
         let yMove = randint(-1,1) * this.yChange;
-        this.move_by(xMove,yMove);
-        if (this.entity_colliding()){
-            this.move_by(-xMove,-yMove);
-        }
+        this.try_move(xMove, yMove);
     }
   }
 }
@@ -48,6 +74,7 @@ class Enemy extends Entity{
 class Player extends Entity{
   constructor(width, height) {
     super();
+	this.canvas = [width,height];
     this.x = randint(10, width - 10);
     this.y = randint(15, height - 15);
     this.health = 100;
