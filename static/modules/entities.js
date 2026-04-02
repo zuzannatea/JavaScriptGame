@@ -1,4 +1,33 @@
+import { canvas } from "../main.js";
+
 let all_entities = [];
+
+const level_details = {
+	1 : {enemy_count : 2},
+}
+
+class GameManager{
+	constructor(){
+		this.enemies = [];
+		this.current_level = new Level(1);
+	}
+	construct_enemies(){
+		let amt_of_enemies = level_details[this.current_level.id].enemy_count;
+		for (let i = 0; i < amt_of_enemies; i++) {
+			this.enemies.push(add_entity(Enemy));
+		}
+	}
+	draw_enemies(context){
+		for (let enemy of this.enemies){
+			enemy.draw(context);
+		}
+	}
+}
+class Level{
+	constructor(id){
+		this.id = id;
+	}
+}
 
 class Entity{
   constructor(width, height) {
@@ -27,16 +56,13 @@ class Entity{
         this.move_by(-xMove,-yMove);
 		let distance = this.estimate_distance(this,entity_colliding,xMove,yMove);
 		this.move_by(distance[0],distance[1]);
-		console.log(distance);
         return false; 
     }
     return true;
   }
   move_by(xMove,yMove){
-		console.log(this.x,this.y);
         this.x = this.x + xMove;
         this.y = this.y + yMove;
-		console.log(this.x,this.y);
   }
   estimate_distance(object, entity_colliding, xMove, yMove){
 	if (xMove < 0){
@@ -46,47 +72,13 @@ class Entity{
 		xMove = entity_colliding.x - object.x - object.length;
 	}
 	if (yMove < 0){
-		console.log("yMove < 0");
-		console.log(yMove);
 		yMove = (object.y - object.height - entity_colliding.y) * -1;
-		console.log(yMove);
 	}
 	else if (yMove > 0){
-		console.log("yMove > 0");
-
 		yMove = entity_colliding.y - entity_colliding.height - object.y;
 	}
 
-/* 
-	let moveX;
-	let moveY;
-	//object | entity
-    if (object.x + object.length + xMove > entity_colliding.x && 
-		object.x + object.length + xMove < entity_colliding.x + entity_colliding.length){
-		moveX = entity_colliding.x - object.length - object.x;
-	}
-	else if (object.x + xMove < entity_colliding.x + entity_colliding.length && 
-		object.x + xMove > entity_colliding.x){
-		moveX = object.x - entity_colliding.x - entity_colliding.length;
-	}
-	else{
-		moveX = xMove;
-	}
-
- 	if (object.y + yMove > entity_colliding.y - entity_colliding.height && 
-		object.y + yMove < entity_colliding.y){
-		moveY = entity_colliding.y - entity_colliding.height - object.y;
-	}
-	else if (object.y - object.height + yMove < entity_colliding.y && 
-		object.y - object.height + yMove > entity_colliding.y - entity_colliding.height){
-		moveY = object.y - object.height - entity_colliding.y;
-
-	}
-	else{
-		moveY = yMove;
-	}
-
- */    console.log(xMove, yMove);
+    console.log(xMove, yMove);
 	return [xMove, yMove];
 	
   }
@@ -125,6 +117,12 @@ class Enemy extends Entity{
         this.try_move(xMove, yMove);
     }
   }
+  draw(context){
+    context.fillStyle = "orange";
+    context.fillRect(this.x, this.y - 10, this.health/this.length, 5);
+    context.fillStyle = "yellow";
+    context.fillRect(this.x, this.y, this.length, this.height);
+  }
 }
 
 class Player extends Entity{
@@ -133,11 +131,57 @@ class Player extends Entity{
 	this.canvas = [width,height];
     this.x = randint(10, width - 10);
     this.y = randint(15, height - 15);
-    this.health = 100;
+	this.max_health = 100;
+    this.curr_health = 100;
     this.score = 0;
     this.extraMoves = [];
+
+ 	this.moveLeft = false;
+	this.moveUp = false;
+	this.moveRight = false;
+	this.moveDown = false; 
+	this.isAttacking = false;
+ 
+  }
+  move(){
+	if (this.moveRight){
+        this.try_move(this.xChange,0);
+    }
+    if (this.moveLeft){
+        this.try_move(-this.xChange,0);
+    }
+    if (this.moveUp){
+        this.try_move(0,-this.yChange);
+    }
+    if (this.moveDown){
+        this.try_move(0,this.yChange);
+    }
+  }
+  draw(context){
+    if (this.isAttacking){context.fillStyle = "purple";}
+    else{context.fillStyle = "cyan";}
+    context.fillRect(this.x, this.y, this.length, this.height);
+    context.fillStyle = "red";
+    context.fillRect(this.x, this.y - 10, this.curr_health/this.length, 5);
+
   }
 }
+
+class Move{
+	constructor(){
+		this.damage_per_use; 
+		this.level = 1;
+	}
+	use(){}
+	upgrade(){}
+}
+
+class Smash extends Move{
+	use(){
+
+	}
+}
+
 
 function is_colliding(object1, object2){
     if (object1.x + object1.length < object2.x + 5 ||
@@ -166,9 +210,22 @@ function is_in_range(object1, object2, attack_range=20){
 function randint(min,max){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function dist(p1,p2){
-    return Math.sqrt((Math.pow((p1.x-p2.x),2)) + Math.pow((p1.y-p2.y),2));
+
+function add_entity(entity_class){
+    let entity = new entity_class(canvas.width, canvas.height);
+    all_entities.push(entity);
+    return entity;
+}
+function remove_entity(entity_instance){
+    let index = all_entities.indexOf(entity_instance);
+    if (index > -1){
+        all_entities.splice(index,1);
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
-export { all_entities, Enemy, Player, is_colliding, randint, is_in_range };
+export { all_entities, Enemy, Player, is_colliding, randint, is_in_range, GameManager,add_entity,remove_entity };
 
