@@ -22,6 +22,12 @@ class GameManager{
 			enemy.draw(context);
 		}
 	}
+	wander_enemies(){
+		for (let enemy of this.enemies){
+			enemy.wander();
+		}
+
+	}
 }
 class Level{
 	constructor(id){
@@ -97,26 +103,29 @@ class Enemy extends Entity{
   constructor(width, height) {
     super();
 	this.canvas = [width, height];
-    this.x = randint(10, width - 10);
-    this.y = randint(10, height - 10);
-	this.target = [];
+    this.x = randint(this.length, width - this.length);
+    this.y = randint(this.height, height - this.height);
+	this.target = {x : randint(this.length, width - this.length), y : randint(this.height, height - this.height)};
     this.health = 50;
   }
   pick_a_point(){
-	return [randint(0,this.canvas[0]), randint(0,this.canvas[1])];
+	return {x : randint(this.length, this.canvas[0] - this.length), y : randint(this.height, this.canvas[1] - this.height)};
   }
   wander(){
-	if (this.target.length === 0){
-		this.target = this.pick_a_point();
-	}
+	if (this.target.length === 0 || is_in_range(this,this.target, 40)){
+		this.target = this.pick_a_point();}
+	let xMove;
+	let yMove;
+	if (this.x < this.target.x){xMove = this.xChange;}
+	else if (this.x > this.target.x){xMove = -this.xChange;}
+	else{xMove = 0;}
 
-    let chanceOfMovement = randint(0,10);
-    if (chanceOfMovement > 7){
-        let xMove = randint(-1,1) * this.xChange;
-        let yMove = randint(-1,1) * this.yChange;
-        this.try_move(xMove, yMove);
-    }
-  }
+	if (this.y < this.target.y){yMove = this.yChange;}
+	else if (this.y > this.target.y){yMove = -this.yChange;}
+	else{yMove = 0;}
+	this.try_move(xMove,yMove);
+	}
+  
   draw(context){
     context.fillStyle = "orange";
     context.fillRect(this.x, this.y - 10, this.health/this.length, 5);
@@ -196,15 +205,10 @@ function is_colliding(object1, object2){
 }
 
 function is_in_range(object1, object2, attack_range=20){
-    if (object1.x + object1.length + attack_range < object2.x ||
-        object2.x + object2.length + attack_range < object1.x ||
-        object1.y + attack_range > object2.y + object2.height ||
-        object2.y + attack_range > object1.y + object1.height){
-            return true;
-        }
-    else{
-        return false;
-    }
+	if (dist(object1, object2) < attack_range){
+		return true;
+	}
+	return false;
 }
 
 function randint(min,max){
@@ -225,6 +229,10 @@ function remove_entity(entity_instance){
     else{
         return false;
     }
+}
+
+function dist(p1,p2){
+    return Math.sqrt(Math.pow((p1.x-p2.x),2)) + Math.pow((p1.y-p2.y),2);
 }
 
 export { all_entities, Enemy, Player, is_colliding, randint, is_in_range, GameManager,add_entity,remove_entity };

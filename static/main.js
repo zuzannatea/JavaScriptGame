@@ -52,6 +52,7 @@ function draw(){
     //enemy.wander();
     player.draw(context);
     game_manager.draw_enemies(context);
+    game_manager.wander_enemies();
 
 
 
@@ -122,12 +123,12 @@ function deactivate(event){
     }
 }
 
- *//* function stop(){
+ */ 
+/* function stop(){
     window.cancelAnimationFrame(request);
     window.removeEventListener("keydown", activate);
     window.removeEventListener("keyup", deactivate)
 
 }
  */
-
 export { canvas };
