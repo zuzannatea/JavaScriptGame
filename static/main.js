@@ -1,4 +1,4 @@
-import { all_entities, Enemy, Player, is_colliding, randint } from './modules/entities.js';
+import { all_entities, Enemy, Player, is_colliding, is_in_range, randint } from './modules/entities.js';
 
 
 let canvas;
@@ -46,6 +46,7 @@ function draw(){
     
 
     if (enemy.health <= 0){
+        remove_entity(enemy);
         enemy = add_entity(Enemy);
     }
 
@@ -63,12 +64,12 @@ function draw(){
     context.fillStyle = "yellow";
     context.fillRect(enemy.x, enemy.y, enemy.length, enemy.height);
 
-    if (is_colliding(player,enemy) && isAttacking){
+    if (is_in_range(player,enemy) && isAttacking){
         enemy.x = enemy.x - 5;
-        enemy.health = enemy.health - 10;
+        enemy.health = enemy.health - 25;
     }
-    enemy.wander();
-
+/*     enemy.wander();
+ */
     if (moveRight){
         player.try_move(player.xChange,0);
     }
