@@ -28,13 +28,13 @@ function init(){
     canvas.width = window.screen.availWidth;
     canvas.height = window.screen.availHeight;
 
-    window.addEventListener("keydown",activate,false);
-    window.addEventListener("keyup",deactivate,false);
     draw();
     game_manager = new GameManager();
     player = add_entity(Player);
     game_manager.construct_enemies();
     game_manager.current_level.generate_level();
+    window.addEventListener("keydown",activate,false);
+    window.addEventListener("keyup",deactivate,false);
 }
 
 
@@ -67,6 +67,13 @@ function draw(){
 }
 
 
+let keybinds = {
+    " " : "isAttacking",
+    "ArrowLeft" : "moveLeft",
+    "ArrowUp" : "moveUp",
+    "ArrowRight" : "moveRight",
+    "ArrowDown" : "moveDown"
+}
 
 function activate(event){
     let key = event.key;
@@ -77,39 +84,16 @@ function activate(event){
         event.key === " "){
             event.preventDefault();
         }
-    if (key === " "){
-        player.isAttacking = true; 
+    if (keybinds[key]){
+        let value = keybinds[key];
+        player[value] = true;
     }
-    if (key === "ArrowLeft"){
-        player.moveLeft = true; 
-    }
-    else if (key === "ArrowUp"){
-        player.moveUp = true;
-    }
-    else if (key === "ArrowRight"){
-        player.moveRight = true;
-    }
-    else if (key === "ArrowDown"){
-        player.moveDown = true;
-    }
-
 }
 function deactivate(event){
     let key = event.key;
-    if (key === "ArrowLeft"){
-        player.moveLeft = false; 
-    }
-    else if (key === "ArrowUp"){
-        player.moveUp = false;
-    }
-    else if (key === "ArrowRight"){
-        player.moveRight = false;
-    }
-    else if (key === "ArrowDown"){
-        player.moveDown = false;
-    }
-    if (key === " "){
-        player.isAttacking = false;
+    if (keybinds[key]){
+        let value = keybinds[key];
+        player[value] = false;
     }
 
 }

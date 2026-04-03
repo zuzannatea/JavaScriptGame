@@ -36,27 +36,26 @@ const TileType = {
 	wall : "red",
 	floor : "green"
 }
-let TILE_SIZE = 16;
+let TILE_SIZE = 32;
 class Level{
 	constructor(id){
 		this.id = id;
 		this.map;
-		this.tile_size = 32;
 	}
 	draw(context){
-		for (let r = 0; r < canvas.width/this.tile_size; r += 1){
-			for (let c = 0; c < canvas.height/this.tile_size; c += 1){
+		for (let r = 0; r < canvas.width/TILE_SIZE; r += 1){
+			for (let c = 0; c < canvas.height/TILE_SIZE; c += 1){
 				context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
-				context.fillRect(c*this.tile_size, r*this.tile_size, this.tile_size, this.tile_size);
+				context.fillRect(c*TILE_SIZE, r*TILE_SIZE, TILE_SIZE, TILE_SIZE);
 			}
 		}
 
 	}
 	generate_level(){
 		this.map = [];
-		for (let r = 0; r < canvas.width/this.tile_size; r+= 1){
+		for (let r = 0; r < canvas.width/TILE_SIZE; r+= 1){
 			this.map.push([]);
-			for (let c = 0; c < canvas.height/this.tile_size; c += 1){
+			for (let c = 0; c < canvas.height/TILE_SIZE; c += 1){
 				let chance = Math.random();
 				if (chance > 0.45){
 					this.map[this.map.length - 1][c] = TileType.wall;
@@ -74,8 +73,8 @@ class Level{
 	}
 	clean_map(){
 		let newMap = this.map;
-		for (let x = 0; x < canvas.width/this.tile_size; x += 1){
-			for (let y = 0; y < canvas.height/this.tile_size; y += 1){
+		for (let x = 0; x < canvas.width/TILE_SIZE; x += 1){
+			for (let y = 0; y < canvas.height/TILE_SIZE; y += 1){
 				let wallCount = this.count_wall_neighbours(x,y,8);
 				if (this.map[x][y] === TileType.wall){
 					newMap[x][y] = wallCount >= 3 ? TileType.wall : TileType.floor;
@@ -111,8 +110,8 @@ class Level{
 			}
 		}
 		console.log(visited);
-    for (let r = 0; r < canvas.width/this.tile_size; r += 1){
-        for (let c = 0; c < canvas.height/this.tile_size; c += 1){
+    for (let r = 0; r < canvas.width/TILE_SIZE; r += 1){
+        for (let c = 0; c < canvas.height/TILE_SIZE; c += 1){
 			if (this.map[r][c] === TileType.floor && !([r,c] in visited)){
 				this.map[r][c] = TileType.wall;
 			}
@@ -135,7 +134,7 @@ class Level{
 					}
 				}
 				//if (this.map[x+r][y+c] != undefined){ <<<< throws an error, fix!!
-				if ((x+r > 0 && x+r < (canvas.width/this.tile_size) && y+c > 0 && y+c < (canvas.height/this.tile_size))){ 
+				if ((x+r > 0 && x+r < (canvas.width/TILE_SIZE) && y+c > 0 && y+c < (canvas.height/TILE_SIZE))){ 
 					if (this.map[x+r][y+c] === TileType.wall){
 						counter += 1;
 				}}
@@ -152,8 +151,8 @@ class Level{
 						continue;
 					}
 				}
-				//console.log("this",x,r,y,c, x+r >= 0, x+r < (canvas.width/this.tile_size), y+c >= 0, y+c < (canvas.height/this.tile_size),(x+r >= 0 && x+r < (canvas.width/this.tile_size) && y+c >= 0 && y+c < (canvas.height/this.tile_size)));
-				if (x+r >= 0 && x+r < (canvas.width/this.tile_size) && y+c >= 0 && y+c < (canvas.height/this.tile_size)){
+				//console.log("this",x,r,y,c, x+r >= 0, x+r < (canvas.width/TILE_SIZE), y+c >= 0, y+c < (canvas.height/TILE_SIZE),(x+r >= 0 && x+r < (canvas.width/TILE_SIZE) && y+c >= 0 && y+c < (canvas.height/TILE_SIZE)));
+				if (x+r >= 0 && x+r < (canvas.width/TILE_SIZE) && y+c >= 0 && y+c < (canvas.height/TILE_SIZE)){
 					if (this.map[x+r][y+c] === TileType.wall && (r != 0 && c != 0)){
 					array.push([x+r,y+c]);
 				}}
