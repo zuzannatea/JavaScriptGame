@@ -34,6 +34,7 @@ function init(){
     game_manager = new GameManager();
     player = add_entity(Player);
     game_manager.construct_enemies();
+    game_manager.current_level.generate_level();
 }
 
 
@@ -49,6 +50,7 @@ function draw(){
 
     context.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
+    game_manager.current_level.draw(context);
     //enemy.wander();
     player.draw(context);
     game_manager.draw_enemies(context);
@@ -112,18 +114,6 @@ function deactivate(event){
 
 }
 
-/* function remove_item(item,array){
-    let index = array.indexOf(item);
-    if (index === -1){
-        return array;
-    }
-    else{
-        array.splice(index,1);
-        return array;
-    }
-}
-
- */ 
 /* function stop(){
     window.cancelAnimationFrame(request);
     window.removeEventListener("keydown", activate);

@@ -1,0 +1,3 @@
+- added vector based wandering for enemy class
+
+- placeholder entity_colliding() method in enemy class 

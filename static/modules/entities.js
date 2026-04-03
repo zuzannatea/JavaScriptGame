@@ -3,7 +3,9 @@ import { canvas } from "../main.js";
 let all_entities = [];
 
 const level_details = {
-	1 : {enemy_count : 2},
+	1 : {
+		enemy_count : 2
+	},
 }
 
 class GameManager{
@@ -29,11 +31,142 @@ class GameManager{
 
 	}
 }
+
+const TileType = {
+	wall : "red",
+	floor : "green"
+}
+let TILE_SIZE = 16;
 class Level{
 	constructor(id){
 		this.id = id;
+		this.map;
+		this.tile_size = 32;
 	}
+	draw(context){
+		for (let r = 0; r < canvas.width/this.tile_size; r += 1){
+			for (let c = 0; c < canvas.height/this.tile_size; c += 1){
+				context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
+				context.fillRect(c*this.tile_size, r*this.tile_size, this.tile_size, this.tile_size);
+			}
+		}
+
+	}
+	generate_level(){
+		this.map = [];
+		for (let r = 0; r < canvas.width/this.tile_size; r+= 1){
+			this.map.push([]);
+			for (let c = 0; c < canvas.height/this.tile_size; c += 1){
+				let chance = Math.random();
+				if (chance > 0.45){
+					this.map[this.map.length - 1][c] = TileType.wall;
+				}
+				else{
+					this.map[r][c] = TileType.floor;
+				}
+			}
+		}
+		for (let i = 0; i < 5; i += 1){
+			this.clean_map();
+		}
+		this.flood_fill();
+
+	}
+	clean_map(){
+		let newMap = this.map;
+		for (let x = 0; x < canvas.width/this.tile_size; x += 1){
+			for (let y = 0; y < canvas.height/this.tile_size; y += 1){
+				let wallCount = this.count_wall_neighbours(x,y,8);
+				if (this.map[x][y] === TileType.wall){
+					newMap[x][y] = wallCount >= 3 ? TileType.wall : TileType.floor;
+				}
+				else{
+					newMap[x][y] = wallCount >= 3 ? TileType.wall : TileType.floor;
+
+				}
+			}
+		}
+		this.map = newMap;
+	}
+	flood_fill(){
+		let startX = 0;
+		let startY = 0;
+		let visited = [];
+		let queue = [];
+		queue.push([startX,startY]);
+		visited.push([startX,startY]);
+
+		while (queue.length > 0){
+			queue.reverse();
+			let curr_cords = queue.pop();
+			queue.reverse();
+			let neighbours = this.remember_wall_neighbours_coords(curr_cords[0],curr_cords[1],4);
+			console.log(neighbours);
+			for (let neighbour of neighbours){
+				console.log(neighbour);
+				if (this.in_bounds(neighbour[0],neighbour[1]) && !([neighbour[0],neighbour[1]] in visited) && this.map[neighbour[0]][neighbour[1]] === TileType.floor){
+					visited.push([neighbour[0],neighbour[1]]);
+					queue.push([neighbour[0],neighbour[1]]);
+				}
+			}
+		}
+		console.log(visited);
+    for (let r = 0; r < canvas.width/this.tile_size; r += 1){
+        for (let c = 0; c < canvas.height/this.tile_size; c += 1){
+			if (this.map[r][c] === TileType.floor && !([r,c] in visited)){
+				this.map[r][c] = TileType.wall;
+			}
+		}
+	}
+	}
+	in_bounds(x,y){
+		if (x > 0 && x < canvas.width && y > 0 && y < canvas.height){
+			return true;
+		}
+		return false;
+	}
+	count_wall_neighbours(x,y,num_of_neighbours){
+		let counter = -1;
+		for (let r = -1; r < 2; r += 1){
+			for (let c = -1; c < 2; c += 1){
+				if (num_of_neighbours === 4){
+					if (r != 0 && c != 0){
+						continue;
+					}
+				}
+				//if (this.map[x+r][y+c] != undefined){ <<<< throws an error, fix!!
+				if ((x+r > 0 && x+r < (canvas.width/this.tile_size) && y+c > 0 && y+c < (canvas.height/this.tile_size))){ 
+					if (this.map[x+r][y+c] === TileType.wall){
+						counter += 1;
+				}}
+			}
+		}
+		return counter;
+	}
+	remember_wall_neighbours_coords(x,y,num_of_neighbours){
+		let array = [];
+		for (let r = -1; r < 2; r += 1){
+			for (let c = -1; c < 2; c += 1){
+				if (num_of_neighbours === 4){
+					if (r != 0 && c != 0){
+						continue;
+					}
+				}
+				//console.log("this",x,r,y,c, x+r >= 0, x+r < (canvas.width/this.tile_size), y+c >= 0, y+c < (canvas.height/this.tile_size),(x+r >= 0 && x+r < (canvas.width/this.tile_size) && y+c >= 0 && y+c < (canvas.height/this.tile_size)));
+				if (x+r >= 0 && x+r < (canvas.width/this.tile_size) && y+c >= 0 && y+c < (canvas.height/this.tile_size)){
+					if (this.map[x+r][y+c] === TileType.wall && (r != 0 && c != 0)){
+					array.push([x+r,y+c]);
+				}}
+			}
+		}
+		return array;
+	}
+
+
 }
+
+
+
 
 class Entity{
   constructor(width, height) {
@@ -84,7 +217,6 @@ class Entity{
 		yMove = entity_colliding.y - entity_colliding.height - object.y;
 	}
 
-    console.log(xMove, yMove);
 	return [xMove, yMove];
 	
   }
@@ -105,6 +237,8 @@ class Enemy extends Entity{
 	this.canvas = [width, height];
     this.x = randint(this.length, width - this.length);
     this.y = randint(this.height, height - this.height);
+	this.xChange = 5;
+	this.yChange = 5;
 	this.target = {x : randint(this.length, width - this.length), y : randint(this.height, height - this.height)};
     this.health = 50;
   }
@@ -112,17 +246,20 @@ class Enemy extends Entity{
 	return {x : randint(this.length, this.canvas[0] - this.length), y : randint(this.height, this.canvas[1] - this.height)};
   }
   wander(){
+
 	if (this.target.length === 0 || is_in_range(this,this.target, 40)){
 		this.target = this.pick_a_point();}
 	let xMove;
 	let yMove;
-	if (this.x < this.target.x){xMove = this.xChange;}
-	else if (this.x > this.target.x){xMove = -this.xChange;}
-	else{xMove = 0;}
+	let dx = this.target.x - this.x;
+	let dy = this.target.y - this.y;
+	let dist = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
+	dx = dx/dist;
+	dy = dy/dist;
 
-	if (this.y < this.target.y){yMove = this.yChange;}
-	else if (this.y > this.target.y){yMove = -this.yChange;}
-	else{yMove = 0;}
+	xMove = dx*this.xChange;
+	yMove = dy*this.yChange;
+
 	this.try_move(xMove,yMove);
 	}
   
@@ -132,6 +269,17 @@ class Enemy extends Entity{
     context.fillStyle = "yellow";
     context.fillRect(this.x, this.y, this.length, this.height);
   }
+  //PLACEHOLDER METHOD! so enemies don't get stuck in collision
+  entity_colliding(){
+    for (let entity of all_entities){
+        if (is_colliding(this,entity) && this != entity){
+			this.target = this.pick_a_point();
+            return entity;
+        }
+    }
+    return false;
+  }
+
 }
 
 class Player extends Entity{
@@ -234,6 +382,17 @@ function remove_entity(entity_instance){
 function dist(p1,p2){
     return Math.sqrt(Math.pow((p1.x-p2.x),2)) + Math.pow((p1.y-p2.y),2);
 }
+function remove_item(item,array){
+    let index = array.indexOf(item);
+    if (index === -1){
+        return array;
+    }
+    else{
+        array.splice(index,1);
+        return array;
+    }
+}
+
 
 export { all_entities, Enemy, Player, is_colliding, randint, is_in_range, GameManager,add_entity,remove_entity };
 
