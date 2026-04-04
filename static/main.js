@@ -5,19 +5,10 @@ let canvas;
 let context;
 
 let fpsInterval = 100 / 30;
-let now;
 let then = Date.now();
 
-let request;
 let player;
 let game_manager;
-
-/* let moveLeft = false;
-let moveUp = false;
-let moveRight = false;
-let moveDown = false; 
-let isAttacking = false;
- */
 
 document.addEventListener("DOMContentLoaded", init, false);
 
@@ -43,7 +34,6 @@ function init(){
 
 
 function draw(){
-
     window.requestAnimationFrame(draw);
     let now = Date.now();
     let elapsed = now - then;
@@ -55,12 +45,10 @@ function draw(){
 
     context.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
-    //enemy.wander();
-    game_manager.draw(context);
-    player.draw(context);
     game_manager.wander_enemies();
 
-
+    game_manager.draw(context);
+    player.draw(context);
 
 }
 
@@ -97,4 +85,4 @@ function deactivate(event){
 
 }
  */
-export { canvas };
+export { canvas, player };

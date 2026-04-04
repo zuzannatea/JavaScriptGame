@@ -1,4 +1,4 @@
-import { canvas } from "../main.js";
+import { canvas, player } from "../main.js";
 
 let all_entities = [];
 
@@ -47,19 +47,24 @@ class Level{
 		this.map = [];
 	}
 	draw(context){
-		let startX = Math.floor(canvas.width/TILE_SIZE/2);
-		let startY = Math.floor(canvas.height/TILE_SIZE/2);
+		let startX = Math.floor(canvas.width/2);
+		let startY = Math.floor(canvas.height/2);
+		let playerPosX = Math.floor(player.x);
+		let playerPosY = Math.floor(player.y);
+		let offsetX = (playerPosX - startX) * -1 / TILE_SIZE;
+		let offsetY = (playerPosY - startY) * -1 / TILE_SIZE;
 		for (let r = 0; r < canvas.width/TILE_SIZE; r += 1){
 			for (let c = 0; c < canvas.height/TILE_SIZE; c += 1){
 				if (startX === r && startY === c){
 					context.fillStyle = "purple";
 				}
 				else{
-
-				context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";}
-				context.fillRect(r*TILE_SIZE, c*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+					context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
+				}
+				context.fillRect((r+offsetX)*TILE_SIZE, (c+offsetY)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
 			}
 		}
+
 
 	}
 	generate_level(){
@@ -258,8 +263,8 @@ class Entity{
     this.y;
     this.length = 20;
     this.height = 35;
-    this.xChange = 10;
-    this.yChange = 10;
+    this.xChange = 5;
+    this.yChange = 5;
     this.health;
   }
   try_move(xMove,yMove){
@@ -376,6 +381,8 @@ class Player extends Entity{
     this.score = 0;
     this.extraMoves = [];
 
+	this.xChange = 5;
+	this.xChange = 5;
  	this.moveLeft = false;
 	this.moveUp = false;
 	this.moveRight = false;
