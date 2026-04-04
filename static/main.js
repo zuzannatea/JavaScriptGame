@@ -25,20 +25,25 @@ function init(){
     canvas = document.querySelector("canvas");
     context = canvas.getContext("2d");
 
-    canvas.width = window.screen.availWidth;
-    canvas.height = window.screen.availHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    draw();
+
     game_manager = new GameManager();
     player = add_entity(Player);
+    draw();
+
+    
     game_manager.construct_enemies();
     game_manager.current_level.generate_level();
     window.addEventListener("keydown",activate,false);
     window.addEventListener("keyup",deactivate,false);
+
 }
 
 
 function draw(){
+
     window.requestAnimationFrame(draw);
     let now = Date.now();
     let elapsed = now - then;
@@ -50,20 +55,13 @@ function draw(){
 
     context.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
-    game_manager.current_level.draw(context);
     //enemy.wander();
+    game_manager.draw(context);
     player.draw(context);
-    game_manager.draw_enemies(context);
     game_manager.wander_enemies();
 
 
 
-/*     if (is_in_range(player,enemy) && player.isAttacking){
-        enemy.x = enemy.x - 5;
-        enemy.health = enemy.health - 25;
-    }
- *//*     enemy.wander();
- */
 }
 
 
@@ -77,23 +75,17 @@ let keybinds = {
 
 function activate(event){
     let key = event.key;
-    if (event.key === "ArrowLeft" ||
-        event.key === "ArrowRight" ||
-        event.key === "ArrowUp" ||
-        event.key === "ArrowDown" ||
-        event.key === " "){
-            event.preventDefault();
-        }
+    if (key in keybinds){
+        event.preventDefault();
+    }
     if (keybinds[key]){
-        let value = keybinds[key];
-        player[value] = true;
+        player[keybinds[key]] = true;
     }
 }
 function deactivate(event){
     let key = event.key;
     if (keybinds[key]){
-        let value = keybinds[key];
-        player[value] = false;
+        player[keybinds[key]] = false;
     }
 
 }

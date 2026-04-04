@@ -1,0 +1,5 @@
+- fixed drawing order 
+- fixed keybinds
+- added presets for map gen 
+- added checking viability for map gen
+- fixed bug with canvas width/height 
