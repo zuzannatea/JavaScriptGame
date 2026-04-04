@@ -1,4 +1,5 @@
-import { all_entities, Enemy, Player, is_colliding, is_in_range, randint, GameManager, add_entity, remove_entity } from './modules/entities.js';
+import { Player, add_entity } from './modules/entities.js';
+import { GameManager } from './modules/levelmanagement.js';
 
 
 let canvas;
