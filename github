@@ -1,0 +1,12 @@
+finish presets (world border) -> add_world_border 
+figure out a way to zoom into the map, add tile collision 
+Dijikstra think about it 
+at least add actual enemy targets (change colour when player in range)
+
+
+added 
+- add_world_border() 
+- minor fixes
+- added basic versions of current_tile() and tile_collision() 
+- added COLLIDER_TILES
+- began work on tile collision

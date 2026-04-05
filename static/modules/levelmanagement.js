@@ -6,11 +6,20 @@ const level_details = {
         enemy_count : 2
     },
 }
+/* const level_details = {
+    1 : {
+        Enemy : 3
+        Player : 2
+        ...etc
+    },
+}
+ */
 const TileType = {
     wall : "red",
     floor : "green"
 }
-let TILE_SIZE = 16;
+let TILE_SIZE = 32;
+let COLLIDER_TILES = [TileType.wall];
 
 class GameManager{
     constructor(){
@@ -33,13 +42,13 @@ class GameManager{
         }
     }
     wander_enemies(){
-        for (let enemy of this.enemies){
+/*         for (let enemy of this.enemies){
             enemy.wander();
         }
-
-    }
+ */    }
 }
 
+let MAP_SIZE_MODIFIER = 1.5;
 class Level{
     constructor(id){
         this.id = id;
@@ -50,11 +59,12 @@ class Level{
         let startY = Math.floor(canvas.height/2);
         let playerPosX = Math.floor(player.x);
         let playerPosY = Math.floor(player.y);
-        let offsetX = ((playerPosX - startX) * -1 / TILE_SIZE) * 2.5;
-        let offsetY = ((playerPosY - startY) * -1 / TILE_SIZE) * 2.5;
-        for (let r = 0; r < canvas.width/TILE_SIZE; r += 1){
-            for (let c = 0; c < canvas.height/TILE_SIZE; c += 1){
-                if (startX === r && startY === c){
+        let offsetX = ((playerPosX - startX) * -1 / TILE_SIZE) * 4;
+        let offsetY = ((playerPosY - startY) * -1 / TILE_SIZE) * 4;
+        for (let r = 0; r < (canvas.width)/TILE_SIZE; r += 1){
+            for (let c = 0; c < (canvas.height)/TILE_SIZE; c += 1){
+                [startX,startY] = player.current_tile();
+                if (r === startX && c === startY){
                     context.fillStyle = "purple";
                 }
                 else{
@@ -66,11 +76,18 @@ class Level{
 
 
     }
+    get_tile(x,y){
+        console.log(x,y);
+        if (this.map[x]){
+            return this.map[x][y];
+        }
+    }
+
     generate_level(){
         this.map = [];
-        for (let r = 0; r < canvas.width/TILE_SIZE; r+= 1){
+        for (let r = 0; r < (canvas.width)/TILE_SIZE; r+= 1){
             this.map.push([]);
-            for (let c = 0; c < canvas.height/TILE_SIZE; c += 1){
+            for (let c = 0; c < (canvas.height)/TILE_SIZE; c += 1){
                 let chance = Math.random();
                 if (chance > 0.65){
                     this.map[this.map.length - 1][c] = TileType.wall;
@@ -88,6 +105,7 @@ class Level{
         if (!this.check_viability()){
             this.generate_level();
         }
+        this.add_world_border();
 
      }
     check_viability(){
@@ -127,12 +145,20 @@ class Level{
             }
         }
 
-
+    }
+    add_world_border(){
         for (let i = 0; i < canvas.width/TILE_SIZE; i++){
-                this.map[i][0] = TileType.wall;
-                this.map[i][this.map.length - 10] = TileType.wall;
+            this.map[i][0] = TileType.wall;
+            this.map[i][1] = TileType.wall;
+            this.map[i][Math.floor(canvas.height/TILE_SIZE)] = TileType.wall;
+            this.map[i][Math.floor(canvas.height/TILE_SIZE) - 1] = TileType.wall;
         }
-
+        for (let j = 0; j < canvas.height/TILE_SIZE; j++){
+            this.map[0][j] = TileType.wall;
+            this.map[1][j] = TileType.wall;
+            this.map[Math.floor(canvas.width/TILE_SIZE)][j] = TileType.wall;
+            this.map[Math.floor(canvas.width/TILE_SIZE) - 1][j] = TileType.wall;
+        }
 
     }
     clean_map(){
@@ -253,4 +279,4 @@ class Level{
     }
  */}
 
-export { GameManager, TILE_SIZE };
+export { GameManager, TILE_SIZE, COLLIDER_TILES };

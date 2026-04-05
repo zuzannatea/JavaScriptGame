@@ -1,16 +1,15 @@
-import { canvas } from "../main.js";
-import {TILE_SIZE} from "./levelmanagement.js";
+import { canvas, game_manager } from "../main.js";
+import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
 
 let all_entities = [];
 
 class Entity{
   constructor(width, height) {
     this.canvas = [width, height];
-	this.width = width;
     this.x;
     this.y;
     this.length = 20;
-    this.height = 35;
+    this.height = 20;
     this.xChange = 5;
     this.yChange = 5;
     this.health;
@@ -25,7 +24,15 @@ class Entity{
         this.y + yMove < 0){
     		return false;
     }
+	
 	this.move_by(xMove,yMove);
+	let tile_colliding = this.tile_colliding();
+	if (tile_colliding){
+		this.move_by(-xMove,-yMove);
+/* 		let distance = this.estimate_distance(tile_colliding,this,xMove,yMove);
+		this.move_by(distance[0],distance[1]);
+ */        return false; 
+	}
 	let entity_colliding = this.entity_colliding();
     if (entity_colliding){
         this.move_by(-xMove,-yMove);
@@ -40,30 +47,60 @@ class Entity{
         this.y = this.y + yMove;
   }
   estimate_distance(object, entity_colliding, xMove, yMove){
+	console.log(object, entity_colliding, xMove, yMove);
+	//check all values. check how it acts w entities vs tiles
 	if (xMove < 0){
 		xMove = (object.x - entity_colliding.x - entity_colliding.length) * -1;
+		console.log(object.x, entity_colliding.x, entity_colliding.length);
+		console.log("xMove < 0: ", xMove);
 	}
 	else if (xMove > 0){
 		xMove = entity_colliding.x - object.x - object.length;
+		console.log(entity_colliding.x, object.x, object.length);
+		console.log("xMove > 0: ", xMove);
 	}
 	if (yMove < 0){
 		yMove = (object.y - object.height - entity_colliding.y) * -1;
+		console.log(object.y, object.height, entity_colliding.y);
+		console.log("yMove < 0: ", yMove);
 	}
 	else if (yMove > 0){
 		yMove = entity_colliding.y - entity_colliding.height - object.y;
+		console.log(entity_colliding.y, entity_colliding.height, object.y);
+		console.log("yMove > 0: ", yMove);
 	}
-
+	console.log(xMove,yMove, entity_colliding);
 	return [xMove, yMove];
 	
   }
   tile_colliding(){
-
+return;
+//removed for enemies
   }
   current_tile(){
-	let posX = Math.floor(this.x/TILE_SIZE);
-/* 	console.log(posX);
- */  }
-  entity_colliding(){
+    let startX = Math.floor(canvas.width/2);
+    let startY = Math.floor(canvas.height/2);
+    let playerPosX = Math.floor(this.x);
+    let playerPosY = Math.floor(this.y);
+    let offsetX = ((playerPosX - startX) * -1 / TILE_SIZE) * 4;
+    let offsetY = ((playerPosY - startY) * -1 / TILE_SIZE) * 4;
+
+	let posX = Math.floor((this.x/TILE_SIZE)-offsetX);
+	let posY = Math.floor((this.y/TILE_SIZE)-offsetY);
+	return [posX,posY];	
+}
+	current_pixels(x,y){
+		let startX = (canvas.width/2);
+		let startY = (canvas.height/2);
+		let playerPosX = (this.x);
+		let playerPosY = (this.y);
+		let offsetX = ((playerPosX - startX) * -1 / TILE_SIZE) * 4;
+		let offsetY = ((playerPosY - startY) * -1 / TILE_SIZE) * 4;
+		let posX = ((x*TILE_SIZE));
+		let posY = ((y*TILE_SIZE));
+		return [posX,posY];	
+	}
+	entity_colliding(){
     for (let entity of all_entities){
         if (is_colliding(this,entity) && this != entity){
             return entity;
@@ -165,9 +202,28 @@ class Player extends Entity{
     else{context.fillStyle = "cyan";}
     context.fillRect(this.x, this.y, this.length, this.height);
     context.fillStyle = "red";
-    context.fillRect(this.x, this.y - 10, this.curr_health/this.length, 5);
+    context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
 
   }
+  tile_colliding(){
+	let current_tileX; let curren_tileY;
+	let pixelX; let pixelY;
+	[current_tileX, curren_tileY] = this.current_tile();
+	let tile_type = game_manager.current_level.get_tile(current_tileX, curren_tileY);
+	console.log(tile_type, COLLIDER_TILES);
+	if (tile_type === "red"){
+		[pixelX,pixelY] = this.current_pixels(current_tileX,curren_tileY);
+ 		return {x : pixelX, 
+			y : pixelY,
+			xTile : current_tileX,
+			yTile : curren_tileY,
+			length : TILE_SIZE,
+			height : TILE_SIZE};
+ 	}
+	return false;
+  }
+
+
 }
 
 class Move{
@@ -240,5 +296,5 @@ function remove_item(item,array){
 }
 
 
-export { all_entities, Enemy, Player, is_colliding, randint, is_in_range,add_entity,remove_entity };
+export { Enemy, Player, add_entity };
 

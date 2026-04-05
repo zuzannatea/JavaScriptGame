@@ -23,11 +23,12 @@ function init(){
 
     game_manager = new GameManager();
     player = add_entity(Player);
-    draw();
 
     
     game_manager.construct_enemies();
     game_manager.current_level.generate_level();
+
+    draw();
     window.addEventListener("keydown",activate,false);
     window.addEventListener("keyup",deactivate,false);
 
@@ -86,4 +87,4 @@ function deactivate(event){
 
 }
  */
-export { canvas, player };
+export { canvas, player, game_manager };

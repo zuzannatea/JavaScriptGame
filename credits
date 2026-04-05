@@ -17,3 +17,9 @@ unit vector
 https://gamedev.net/tutorials/business/production-and-management/procedural-generation-of-2d-tile-maps-in-games-r6132 - procedural generation 
 
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object - working w objects
+
+
+there'll probably be a need for some kind of stages system 
+ie: startGame, startingMenu, game, endScreen 
+
+line 50, entities js
