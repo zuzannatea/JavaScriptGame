@@ -73,15 +73,28 @@ class Entity{
  */		return [xMove, yMove];
 	
 	}
-	tile_colliding(){
-		return;
-	//removed for enemies
+  tile_colliding(){
+	let all_tiles = this.get_current_tiles();
+	let collisions = [];
+	console.log(all_tiles);
+	for (let tile of all_tiles){
+		if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
+			collisions.push({
+				x : tile[0],
+				y : tile[1],
+				length : TILE_SIZE,
+				height : TILE_SIZE,
+			});
+		}
 	}
-	get_current_tiles(){
-		let pos1 = [Math.floor(this.x/TILE_SIZE), Math.floor(this.y/TILE_SIZE)];
-		let pos2 = [Math.floor((this.x+this.length)/TILE_SIZE), Math.floor(this.y/TILE_SIZE)];
-		let pos3 = [Math.floor((this.x+this.length)/TILE_SIZE), Math.floor((this.y+this.height)/TILE_SIZE)];
-		let pos4 = [Math.floor(this.x/TILE_SIZE), Math.floor((this.y+this.height)/TILE_SIZE)];
+	if (collisions.length > 0){return collisions;}
+	return false;
+  }
+	get_current_tiles(x = this.x, y = this.y, length = this.length, height = this.height){
+		let pos1 = [Math.floor(x/TILE_SIZE), Math.floor(y/TILE_SIZE)];
+		let pos2 = [Math.floor((x+length)/TILE_SIZE), Math.floor(y/TILE_SIZE)];
+		let pos3 = [Math.floor((x+length)/TILE_SIZE), Math.floor((y+height)/TILE_SIZE)];
+		let pos4 = [Math.floor(x/TILE_SIZE), Math.floor((y+height)/TILE_SIZE)];
 		return [pos1, pos2, pos3, pos4];	
 	}
 	
@@ -100,15 +113,38 @@ class Enemy extends Entity{
   constructor(width, height) {
     super();
 	this.canvas = [width, height];
-    this.x = randint(this.length, width - this.length);
-    this.y = randint(this.height, height - this.height);
+    this.x;
+    this.y;
+	let point = this.pick_a_point();
+	[this.x, this.y] = [point.x, point.y];
 	this.xChange = 5;
 	this.yChange = 5;
 	this.target = {x : randint(this.length, width - this.length), y : randint(this.height, height - this.height)};
     this.health = 50;
   }
+  
   pick_a_point(){
-	return {x : randint(this.length, this.canvas[0] - this.length), y : randint(this.height, this.canvas[1] - this.height)};
+	let cleared = false; 
+	let checker = false;
+	let point = {x : randint(this.length, this.canvas[0] - this.length), y : randint(this.height, this.canvas[1] - this.height)};
+ 	let tiles = this.get_current_tiles(point.x, point.y);
+ 	while (!cleared){
+		checker = true;
+		for (let tile of tiles){
+			if (game_manager.current_level.get_tile(tile[0],tile[1]) === "red"){
+				checker = false;
+				continue;
+			}
+		}
+		if (checker === true){
+			cleared = true;
+		}
+		point = {x : randint(this.length, this.canvas[0] - this.length), y : randint(this.height, this.canvas[1] - this.height)};
+		tiles = this.get_current_tiles(point.x, point.y);
+
+ 
+	}
+ 	return point;
   }
   wander(){
 
@@ -134,7 +170,7 @@ class Enemy extends Entity{
     context.fillStyle = "yellow";
     context.fillRect(this.x, this.y, this.length, this.height);
   }
-  //PLACEHOLDER METHOD! so enemies don't get stuck in collision
+  //PLACEHOLDER METHODS! so enemies don't get stuck in collision
   entity_colliding(){
     for (let entity of all_entities){
         if (is_colliding(this,entity) && this != entity){
@@ -143,6 +179,26 @@ class Enemy extends Entity{
         }
     }
     return false;
+  }
+  tile_colliding(){
+	let all_tiles = this.get_current_tiles();
+	let collisions = [];
+	console.log(all_tiles);
+	for (let tile of all_tiles){
+		if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
+			collisions.push({
+				x : tile[0],
+				y : tile[1],
+				length : TILE_SIZE,
+				height : TILE_SIZE,
+			});
+		}
+	}
+	if (collisions.length > 0){
+		this.target = this.pick_a_point();
+
+		return collisions;}
+	return false;
   }
 
 }
@@ -190,23 +246,6 @@ class Player extends Entity{
     context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
 
   }
-  tile_colliding(){
-	let all_tiles = this.get_current_tiles();
-	let collisions = [];
-	console.log(all_tiles);
-	for (let tile of all_tiles){
-		if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
-			collisions.push({
-				x : tile[0],
-				y : tile[1],
-				length : TILE_SIZE,
-				height : TILE_SIZE,
-			});
-		}
-	}
-	if (collisions.length > 0){return collisions;}
-	return false;
-  }
 
 
 }
@@ -228,8 +267,8 @@ class Smash extends Move{
 
 
 function is_colliding(object1, object2){
-    if (object1.x + object1.length < object2.x + 10 ||
-        object2.x + object2.length < object1.x + 10 ||
+    if (object1.x + object1.length < object2.x + 5 ||
+        object2.x + object2.length < object1.x + 5 ||
         object1.y > object2.y + object2.height ||
         object2.y > object1.y + object1.height){
             return false;

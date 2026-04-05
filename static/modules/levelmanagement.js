@@ -42,10 +42,10 @@ class GameManager{
         }
     }
     wander_enemies(){
-/*         for (let enemy of this.enemies){
+         for (let enemy of this.enemies){
             enemy.wander();
         }
- */    }
+     }
 }
 
 let MAP_SIZE_MODIFIER = 1.5;
