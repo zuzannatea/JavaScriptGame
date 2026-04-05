@@ -7,6 +7,6 @@ at least add actual enemy targets (change colour when player in range)
 added 
 - add_world_border() 
 - minor fixes
-- added basic versions of current_tile() and tile_collision() 
-- added COLLIDER_TILES
-- began work on tile collision
+- Added basic versions of current_tile() and tile_collision() 
+- Added COLLIDER_TILES
+- Began work on tile collision

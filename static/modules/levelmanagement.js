@@ -57,27 +57,28 @@ class Level{
     draw(context){
         let startX = Math.floor(canvas.width/2);
         let startY = Math.floor(canvas.height/2);
+        let x2; let y2;
         let playerPosX = Math.floor(player.x);
         let playerPosY = Math.floor(player.y);
-        let offsetX = ((playerPosX - startX) * -1 / TILE_SIZE) * 4;
-        let offsetY = ((playerPosY - startY) * -1 / TILE_SIZE) * 4;
+        let offsetX = ((startX - playerPosX) / TILE_SIZE);
+        let offsetY = ((startY - playerPosY) / TILE_SIZE);
         for (let r = 0; r < (canvas.width)/TILE_SIZE; r += 1){
             for (let c = 0; c < (canvas.height)/TILE_SIZE; c += 1){
-                [startX,startY] = player.current_tile();
-                if (r === startX && c === startY){
-                    context.fillStyle = "purple";
+                context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
+                let player_tiles = player.get_current_tiles();
+                for (let tile of player_tiles){
+                    if (r === tile[0] && c === tile[1]){
+                        context.fillStyle = "purple";
+
+                    }
                 }
-                else{
-                    context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
-                }
-                context.fillRect((r+offsetX)*TILE_SIZE, (c+offsetY)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                context.fillRect((r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
 
 
     }
     get_tile(x,y){
-        console.log(x,y);
         if (this.map[x]){
             return this.map[x][y];
         }

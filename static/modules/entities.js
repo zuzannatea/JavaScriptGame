@@ -4,102 +4,87 @@ import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
 let all_entities = [];
 
 class Entity{
-  constructor(width, height) {
-    this.canvas = [width, height];
-    this.x;
-    this.y;
-    this.length = 20;
-    this.height = 20;
-    this.xChange = 5;
-    this.yChange = 5;
-    this.health;
+	constructor(width, height) {
+		this.canvas = [width, height];
+		this.x;
+		this.y;
+		this.length = 20;
+		this.height = 20;
+		this.xChange = 5;
+		this.yChange = 5;
+		this.health;
+	}
+	try_move(xMove,yMove){
+		//console.log(this.current_tile());
+		if (yMove === undefined){yMove = 0;}
+		if (xMove === undefined){xMove = 0;}
+		if (this.x + this.length + xMove >= this.canvas[0] ||
+			this.x + xMove < 0 ||
+			this.y + this.height + yMove >= this.canvas[1] ||
+			this.y + yMove < 0){
+				return false;
+		}
+		
+		this.move_by(xMove,yMove);
+		let tile_colliding = this.tile_colliding();
+		if (tile_colliding){
+			this.move_by(-xMove,-yMove);
+	/* 		let distance = this.estimate_distance(tile_colliding,this,xMove,yMove);
+			this.move_by(distance[0],distance[1]);
+	*/        return false; 
+		}
+		let entity_colliding = this.entity_colliding();
+		if (entity_colliding){
+			this.move_by(-xMove,-yMove);
+			let distance = this.estimate_distance(this,entity_colliding,xMove,yMove);
+			this.move_by(distance[0],distance[1]);
+			return false; 
+		}
+		return true;
   }
-  try_move(xMove,yMove){
-	this.current_tile();
-	if (yMove === undefined){yMove = 0;}
-	if (xMove === undefined){xMove = 0;}
-	if (this.x + this.length + xMove >= this.canvas[0] ||
-        this.x + xMove < 0 ||
-        this.y + this.height + yMove >= this.canvas[1] ||
-        this.y + yMove < 0){
-    		return false;
-    }
+	move_by(xMove,yMove){
+		this.x = this.x + xMove;
+		this.y = this.y + yMove;
+	}
+  	estimate_distance(object, entity_colliding, xMove, yMove){
+/* 		console.log(object, entity_colliding, xMove, yMove);
+ */		//check all values. check how it acts w entities vs tiles
+		if (xMove < 0){
+			xMove = (object.x - entity_colliding.x - entity_colliding.length) * -1;
+/* 			console.log(object.x, entity_colliding.x, entity_colliding.length);
+			console.log("xMove < 0: ", xMove);
+ */		}
+		else if (xMove > 0){
+			xMove = entity_colliding.x - object.x - object.length;
+/* 			console.log(entity_colliding.x, object.x, object.length);
+			console.log("xMove > 0: ", xMove);
+ */		}
+		if (yMove < 0){
+			yMove = (object.y - object.height - entity_colliding.y) * -1;
+/* 			console.log(object.y, object.height, entity_colliding.y);
+			console.log("yMove < 0: ", yMove);
+ */		}
+		else if (yMove > 0){
+			yMove = entity_colliding.y - entity_colliding.height - object.y;
+/* 			console.log(entity_colliding.y, entity_colliding.height, object.y);
+			console.log("yMove > 0: ", yMove);
+ */		}
+/* 		console.log(xMove,yMove, entity_colliding);
+ */		return [xMove, yMove];
 	
-	this.move_by(xMove,yMove);
-	let tile_colliding = this.tile_colliding();
-	if (tile_colliding){
-		this.move_by(-xMove,-yMove);
-/* 		let distance = this.estimate_distance(tile_colliding,this,xMove,yMove);
-		this.move_by(distance[0],distance[1]);
- */        return false; 
 	}
-	let entity_colliding = this.entity_colliding();
-    if (entity_colliding){
-        this.move_by(-xMove,-yMove);
-		let distance = this.estimate_distance(this,entity_colliding,xMove,yMove);
-		this.move_by(distance[0],distance[1]);
-        return false; 
-    }
-    return true;
-  }
-  move_by(xMove,yMove){
-        this.x = this.x + xMove;
-        this.y = this.y + yMove;
-  }
-  estimate_distance(object, entity_colliding, xMove, yMove){
-	console.log(object, entity_colliding, xMove, yMove);
-	//check all values. check how it acts w entities vs tiles
-	if (xMove < 0){
-		xMove = (object.x - entity_colliding.x - entity_colliding.length) * -1;
-		console.log(object.x, entity_colliding.x, entity_colliding.length);
-		console.log("xMove < 0: ", xMove);
+	tile_colliding(){
+		return;
+	//removed for enemies
 	}
-	else if (xMove > 0){
-		xMove = entity_colliding.x - object.x - object.length;
-		console.log(entity_colliding.x, object.x, object.length);
-		console.log("xMove > 0: ", xMove);
+	get_current_tiles(){
+		let pos1 = [Math.floor(this.x/TILE_SIZE), Math.floor(this.y/TILE_SIZE)];
+		let pos2 = [Math.floor((this.x+this.length)/TILE_SIZE), Math.floor(this.y/TILE_SIZE)];
+		let pos3 = [Math.floor((this.x+this.length)/TILE_SIZE), Math.floor((this.y+this.height)/TILE_SIZE)];
+		let pos4 = [Math.floor(this.x/TILE_SIZE), Math.floor((this.y+this.height)/TILE_SIZE)];
+		return [pos1, pos2, pos3, pos4];	
 	}
-	if (yMove < 0){
-		yMove = (object.y - object.height - entity_colliding.y) * -1;
-		console.log(object.y, object.height, entity_colliding.y);
-		console.log("yMove < 0: ", yMove);
-	}
-	else if (yMove > 0){
-		yMove = entity_colliding.y - entity_colliding.height - object.y;
-		console.log(entity_colliding.y, entity_colliding.height, object.y);
-		console.log("yMove > 0: ", yMove);
-	}
-	console.log(xMove,yMove, entity_colliding);
-	return [xMove, yMove];
 	
-  }
-  tile_colliding(){
-return;
-//removed for enemies
-  }
-  current_tile(){
-    let startX = Math.floor(canvas.width/2);
-    let startY = Math.floor(canvas.height/2);
-    let playerPosX = Math.floor(this.x);
-    let playerPosY = Math.floor(this.y);
-    let offsetX = ((playerPosX - startX) * -1 / TILE_SIZE) * 4;
-    let offsetY = ((playerPosY - startY) * -1 / TILE_SIZE) * 4;
-
-	let posX = Math.floor((this.x/TILE_SIZE)-offsetX);
-	let posY = Math.floor((this.y/TILE_SIZE)-offsetY);
-	return [posX,posY];	
-}
-	current_pixels(x,y){
-		let startX = (canvas.width/2);
-		let startY = (canvas.height/2);
-		let playerPosX = (this.x);
-		let playerPosY = (this.y);
-		let offsetX = ((playerPosX - startX) * -1 / TILE_SIZE) * 4;
-		let offsetY = ((playerPosY - startY) * -1 / TILE_SIZE) * 4;
-		let posX = ((x*TILE_SIZE));
-		let posY = ((y*TILE_SIZE));
-		return [posX,posY];	
-	}
 	entity_colliding(){
     for (let entity of all_entities){
         if (is_colliding(this,entity) && this != entity){
@@ -206,20 +191,20 @@ class Player extends Entity{
 
   }
   tile_colliding(){
-	let current_tileX; let curren_tileY;
-	let pixelX; let pixelY;
-	[current_tileX, curren_tileY] = this.current_tile();
-	let tile_type = game_manager.current_level.get_tile(current_tileX, curren_tileY);
-	console.log(tile_type, COLLIDER_TILES);
-	if (tile_type === "red"){
-		[pixelX,pixelY] = this.current_pixels(current_tileX,curren_tileY);
- 		return {x : pixelX, 
-			y : pixelY,
-			xTile : current_tileX,
-			yTile : curren_tileY,
-			length : TILE_SIZE,
-			height : TILE_SIZE};
- 	}
+	let all_tiles = this.get_current_tiles();
+	let collisions = [];
+	console.log(all_tiles);
+	for (let tile of all_tiles){
+		if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
+			collisions.push({
+				x : tile[0],
+				y : tile[1],
+				length : TILE_SIZE,
+				height : TILE_SIZE,
+			});
+		}
+	}
+	if (collisions.length > 0){return collisions;}
 	return false;
   }
 
@@ -243,8 +228,8 @@ class Smash extends Move{
 
 
 function is_colliding(object1, object2){
-    if (object1.x + object1.length < object2.x + 5 ||
-        object2.x + object2.length < object1.x + 5 ||
+    if (object1.x + object1.length < object2.x + 10 ||
+        object2.x + object2.length < object1.x + 10 ||
         object1.y > object2.y + object2.height ||
         object2.y > object1.y + object1.height){
             return false;
