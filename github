@@ -1,12 +1,11 @@
-finish presets (world border) -> add_world_border 
-figure out a way to zoom into the map, add tile collision 
-Dijikstra think about it 
-at least add actual enemy targets (change colour when player in range)
+TODO
+fix enemies spawning in red (Y)
+fix floodfill?? because it doesnt rly work (Y)
+add back world border
+add primitive combat to enemies 
+change enemy colour when in range?
+add primitive combat to player
 
-
-added 
-- add_world_border() 
-- minor fixes
-- Added basic versions of current_tile() and tile_collision() 
-- Added COLLIDER_TILES
-- Began work on tile collision
+FURTHER TODO
+implement dijkstra/a*
+actual combat stats for player as discussed

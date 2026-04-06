@@ -20,13 +20,11 @@ function init(){
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-
     game_manager = new GameManager();
     player = add_entity(Player);
 
-    
-    game_manager.construct_enemies();
     game_manager.current_level.generate_level();
+    game_manager.construct_enemies();
 
     draw();
     window.addEventListener("keydown",activate,false);
