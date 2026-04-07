@@ -1,5 +1,5 @@
-import { canvas, player } from "../main.js";
-import { add_entity, Enemy } from "./entities.js";
+import { canvas, player, game_manager } from "../main.js";
+import { add_entity, Enemy, dist } from "./entities.js";
 
 const level_details = {
     1 : {
@@ -53,7 +53,197 @@ class Level{
     constructor(id){
         this.id = id;
         this.map = [];
+        this.to_be_drawn = [];
+        this.player_tile = 0;
     }
+    get_adjacent_tiles_with_weight(row,col){
+        let adj_tiles = [];
+        let type;
+        if (row > 0){
+            type = String(this.map[row-1][col]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row-1, col],
+                value : type
+            });
+        }
+        if (row < this.map.length - 1){
+            type = String(this.map[row+1][col]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row+1, col],
+                value : type
+            });
+        }
+        if (col > 0){
+            type = String(this.map[row][col-1]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row, col-1],
+                value : type
+            });
+        }
+        if (col < this.map[0].length - 1){
+            type = String(this.map[row][col+1]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row, col+1],
+                value : type
+            });
+        }
+        return adj_tiles;
+    }
+    sort_queue(pq){
+        return pq.sort((a, b) => a.value - b.value);
+    }
+    get_shortest_path(source_tile, destination_tile){
+        console.log("Ran");
+        let [sourceX, sourceY] = source_tile;
+        let [destX, destY] = destination_tile;
+        if (this.get_tile(destX, destY) === "red" || this.get_tile(sourceX,sourceY) === "red"){
+            console.log("No path");
+            return -1;
+        }
+        let adj = [];
+        console.log("input read");
+        for (let row = 0; row < this.map.length; row++){
+            adj.push([]);
+            for (let col = 0; col < this.map[0].length; col++){
+                let adj_tiles = this.get_adjacent_tiles_with_weight(row,col);
+                adj[row].push([]);
+                for (let tile of adj_tiles){
+                    adj[row][col].push(tile);
+                }
+            }
+        }
+        let pq = [];
+        console.log("got to adj; ", adj);
+        let dist = [];
+        for (let row = 0; row < this.map.length; row++){
+            dist.push([]);
+            for (let col = 0; col < this.map[0].length; col++){
+                dist[row].push(Number.MAX_SAFE_INTEGER);
+            }
+        }
+        dist[sourceX][sourceY] = 0;
+        pq.push({value : 0,
+            tile : [sourceX,sourceY]});
+        pq = this.sort_queue(pq);
+        while (!(pq.length===0)){
+            let item = pq.pop();
+            let [y,x] = item.tile;
+            if (item.value > dist[y][x]){
+                continue;
+            }
+            for (let tile of adj[y][x]){
+                let [tile_row, tile_col] = tile.tile;
+                if (dist[y][x] + tile.value < dist[tile_row][tile_col]){
+                    dist[tile_row][tile_col] = dist[y][x] + tile.value;
+                    pq.push(
+                        {value : dist[tile_row][tile_col],
+                        tile : tile.tile
+                        });
+                    pq = this.sort_queue(pq);
+                }
+
+            }
+        }
+        let curr_tile = [sourceX,sourceY];
+        let path = [curr_tile];
+        let best_choice = 0;
+        if (dist[destX][destY] === Number.MAX_SAFE_INTEGER){
+            console.log("no path"); return;
+        }
+        while (best_choice < dist[destX][destY]){
+            let [curr_x, curr_y] = curr_tile;
+            let adj_tiles = this.get_adjacent_tiles_with_weight(curr_x, curr_y);
+            for (let tile of adj_tiles){
+                let [tile_row, tile_col] = tile.tile;
+                if (Number(dist[tile_row][tile_col]) === best_choice + 1){
+                    best_choice = dist[tile_row][tile_col];
+                    curr_tile = [tile_row, tile_col];
+                    path.push(curr_tile);
+                } 
+            }
+        }
+        console.log(path);
+        return path;
+    }
+
+    /*     get_adjacent_tiles_with_weight(row,col){
+        let adj_tiles = [];
+        let type;
+        if (row > 0){
+            type = this.map.get_tile(col,row-1) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row-1, col],
+                value : type
+            });
+        }
+        if (row < this.map.length - 1){
+            type = this.map.get_tile(col,row+1) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row+1, col],
+                value : type
+            });
+        }
+        if (col > 0){
+            type = this.map.get_tile(col-1,row) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row, col-1],
+                value : type
+            });
+        }
+        if (col < this.map[0].length - 1){
+            type = this.map.get_tile(col+1,row) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            adj_tiles.push({
+                tile : [row, col+1],
+                value : type
+            });
+        }
+        return adj_tiles;
+    }
+    get_shortest_path(source_tile, destination_tile){
+        let [sourceX, sourceY] = source_tile;
+        let [destX, destY] = destination_tile;
+        let adj = [];
+        for (let row = 0; row < this.map.length; row++){
+            adj.push([]);
+            for (let col = 0; col < this.map[0].length; col++){
+                let adj_tiles = this.get_adjacent_tiles_with_weight(row,col);
+                adj[row].push([]);
+                for (let tile of adj_tiles){
+                    //tile = {tile, value}
+                    adj[row][col].push(tile);
+                }
+            }
+        }
+        let pq = new MinHeap();
+        let dist = [];
+        for (let row = 0; row < this.map.length; row++){
+            dist.push([]);
+            for (let col = 0; col < this.map[0].length; col++){
+                dist[row].push(Number.MAX_SAFE_INTEGER);
+            }
+        }
+        dist[sourceY][sourceX] = 0;
+        pq.push([0, [sourceY,sourceX]]);
+        while (!pq.isEmpty()){
+            let [d,u] = pq.pop();
+            //d = distance int, u = tile(x,y)
+            let [x,y] = u;
+            if (d > dist[y,x]){
+                continue;
+            }
+            for (let tile of adj[y][x]){
+                let [tile_row, tile_col] = tile.tile;
+                if (dist[y,x] + tile.value < dist[tile_row][tile_col]){
+                    dist[tile_row][tile_col] = dist[y,x] + tile.value;
+                    pq.push([dist[tile_row][tile_col], tile.tile]);
+                }
+
+            }
+        }
+        return dist;
+    }
+ */    
+
     draw(context){
         let startX = Math.floor(canvas.width/2);
         let startY = Math.floor(canvas.height/2);
@@ -61,12 +251,22 @@ class Level{
         let playerPosY = Math.floor(player.y);
 /*         let offsetX = ((startX - playerPosX) / TILE_SIZE);
         let offsetY = ((startY - playerPosY) / TILE_SIZE);
- */
+ */   
+        let player_tiles = player.get_current_tiles();
+        let [y,x] = player_tiles[0];
+        if (player_tiles[0] != this.player_tile){
+        this.to_be_drawn = this.get_shortest_path([y,x], [this.map.length/2+5,this.map[0].length/2+5]);
+        }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
             for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
                 context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
                 let player_tiles = player.get_current_tiles();
                 for (let tile of player_tiles){
+                    for (let place of this.to_be_drawn){
+                        if (r === place[0] && c === place[1]){
+                            context.fillStyle = 'yellow';
+                        }
+                    }
                     if (r === tile[0] && c === tile[1]){
                         context.fillStyle = "purple";
 
@@ -98,7 +298,7 @@ class Level{
                 }
             }
         }
-         for (let i = 0; i < 5; i += 1){
+        for (let i = 0; i < 5; i += 1){
             this.clean_map();
         }
         this.add_presets();
@@ -107,8 +307,8 @@ class Level{
             this.generate_level();
         }
         //this.add_world_border();
-
-     }
+        //console.log(get_shortest_path([0,0],[this.map.length, this.map[0].length]));
+    }
     check_viability(){
         let floor_counter = 0;
         let general_counter = 0;

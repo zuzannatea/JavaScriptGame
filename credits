@@ -19,6 +19,8 @@ https://gamedev.net/tutorials/business/production-and-management/procedural-gene
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object - working w objects
 
 
+https://www.javascripttutorial.net/array/javascript-sort-an-array-of-objects/ - sorting an array w objects
+
 there'll probably be a need for some kind of stages system 
 ie: startGame, startingMenu, game, endScreen 
 

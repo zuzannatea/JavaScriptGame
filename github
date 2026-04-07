@@ -9,3 +9,5 @@ add primitive combat to player
 FURTHER TODO
 implement dijkstra/a*
 actual combat stats for player as discussed
+
+- switched to row/col names for tileset

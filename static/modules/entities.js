@@ -319,5 +319,5 @@ function remove_item(item,array){
 }
 
 
-export { Enemy, Player, add_entity };
+export { Enemy, Player, add_entity, dist };
 
