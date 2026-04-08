@@ -12,12 +12,19 @@ class Entity{
 		this.y;
 		this.length = 20;
 		this.height = 20;
-		this.xChange = 5;
-		this.yChange = 5;
+
+		this.speed = 5;
+		this.strength = 10;
 		this.max_health = 50;
+
 		this.curr_health = 50;
+
+		this.last_attack = Date.now(); 
 	}
 	hurt(amount=10){
+		if (Date.now() - this.last_attack < 500){
+			return;
+		}
 		if (this.curr_health - amount >= 0){
 			this.die();
 		}
@@ -132,8 +139,7 @@ class Enemy extends Entity{
 		this.y;
 		let point = this.pick_a_point();
 		[this.x, this.y] = [point.x, point.y];
-		this.xChange = 5;
-		this.yChange = 5;
+		this.speed = 2.5;
 		this.target = {x : this.x, y : this.y};
 
 		this.colour = "yellow";
@@ -204,21 +210,21 @@ class Enemy extends Entity{
 	}
 
 	attack_charge(){
-		if (calcDist(this,player) >= 90){
+		if (calcDist(this,player) >= 25){
 			let xMove; let yMove;
 			let dx = player.x - this.x;
 			let dy = player.y - this.y;
 			let dist = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
 			dx = dx/dist;
 			dy = dy/dist;
-			xMove = (dx*this.xChange);
-			yMove = (dy*this.yChange);
+			xMove = (dx*this.speed);
+			yMove = (dy*this.speed);
 			this.try_move(xMove, yMove);
 		}
 
-		if (calcDist(this,player) < 90){
+		if (calcDist(this,player) < 25){
 			this.colour = "black";
-			player.curr_health -= 10;
+			player.hurt(this.strength);
 		}else{this.colour = "orange";}
 
 	}
@@ -227,14 +233,14 @@ class Enemy extends Entity{
 		this.y = Math.floor(this.y / TILE_SIZE) * TILE_SIZE + (TILE_SIZE - this.height) / 2;
 	}
 	wander(current_level, priority=0){
-		if (calcDist(this,player) < 124){
+		if (calcDist(this,player) < 50){
 			console.log("now");
 			this.colour = "orange";
 			this.attack_charge();
 		}
 		else{
 			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
-			while(!this.try_move(xMove * this.xChange/2, yMove * this.yChange/2)){
+			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
 				this.snap_to_tile();
 				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
 			} 
@@ -285,6 +291,7 @@ class Enemy extends Entity{
 class Player extends Entity{
 	constructor(width, height) {
 		super();
+		this.ability_manager = new AbilityManager();
 		this.canvas = [width,height];
 		this.x = Math.floor(canvas.width/2);
 		this.y = Math.floor(canvas.height/2);
@@ -294,42 +301,61 @@ class Player extends Entity{
 		this.score = 0;
 		this.extraMoves = [];
 
-		this.xChange = 2;
-		this.yChange = 2;
-		this.moveLeft = false;
-		this.moveUp = false;
-		this.moveRight = false;
-		this.moveDown = false; 
-		this.isAttacking = false;
+		this.speed = 5;
+		
+		this.pressedKeys = new Set();
+
+		this.specialMoveTimer;
+		this.cooldown = 0; 
+		this.longQTap = false;
+		this.shortQTap = false;
 
 		this.colour = "cyan";
 	
 	}
 	move(){
-		if (this.moveRight){
-			this.try_move(this.xChange,0);
+		this.cooldown = Math.max(this.cooldown - 1,0);
+		if (this.pressedKeys.has("moveRight")){
+			this.try_move(this.speed,0);
 		}
-		if (this.moveLeft){
-			this.try_move(-this.xChange,0);
+		if (this.pressedKeys.has("moveLeft")){
+			this.try_move(-this.speed,0);
 		}
-		if (this.moveUp){
-			this.try_move(0,-this.yChange);
+		if (this.pressedKeys.has("moveUp")){
+			this.try_move(0,-this.speed);
 		}
-		if (this.moveDown){
-			this.try_move(0,this.yChange);
+		if (this.pressedKeys.has("moveDown")){
+			this.try_move(0,this.speed);
 		}
-		if (this.isAttacking){
+		if (this.pressedKeys.has("isAttacking")){
 			console.log("Is");
 			let entities = game_manager.entities_in_range(this);
 			console.log(entities);
 			if (entities.length != 0){
-				console.log("Happens");
 				this.colour = "yellow";
 				let entity = entities.pop();
-				entity.hurt(25);
+				entity.hurt(this.strength);
 				//console.log(entity.health);
 			}
 			else{this.colour = "cyan";}
+		}
+
+		if (this.cooldown <= 0){
+			if (this.pressedKeys.has("specialMoveModifierKey")){
+				this.ability_manager.charge();
+				this.cooldown = 25;
+			
+			}
+			else if (this.longQTap){
+				this.ability_manager.smash();
+				this.longQTap = false;
+				this.cooldown = 25;
+			}
+			else if (this.shortQTap){
+				this.ability_manager.roll();
+				this.shortQTap = false;
+				this.cooldown = 25;
+			}
 		}
 	}
 	draw(context){
@@ -343,23 +369,48 @@ class Player extends Entity{
 
 }
 
-class MoveManager{
+class AbilityManager{
 	constructor(){
-		this.all_moves = [];
-		this.current_moves = [];
+		this.all_abilities = [Smash, Roll, Charge];
+		this.current_abilities = {
+			smash : undefined, 
+			roll : undefined, 
+			charge : undefined
+		};
 	}
+	roll(){
+		console.log("roll");
+	}
+	smash(){
+		console.log("smash");
+	}
+	charge(){
+		console.log("charge");
+	}
+
 }
 
-class Move{
+class Ability{
 	constructor(){
 		this.damage_per_use; 
 		this.level = 1;
+		this.max_level = 3;
 	}
 	use(){}
 	upgrade(){}
 }
 
-class Smash extends Move{
+class Smash extends Ability{
+	use(){
+
+	}
+}
+class Roll extends Ability{
+	use(){
+
+	}
+}
+class Charge extends Ability{
 	use(){
 
 	}

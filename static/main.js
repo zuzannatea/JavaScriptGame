@@ -46,7 +46,7 @@ function draw(){
     context.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
     game_manager.draw(context);
-    //game_manager.wander_enemies();
+    game_manager.wander_enemies();
 
     player.draw(context);
 
@@ -58,7 +58,9 @@ let keybinds = {
     "ArrowLeft" : "moveLeft",
     "ArrowUp" : "moveUp",
     "ArrowRight" : "moveRight",
-    "ArrowDown" : "moveDown"
+    "ArrowDown" : "moveDown",
+    "q" : "specialMove",
+    "Q" : "specialMoveModifierKey"
 }
 
 function activate(event){
@@ -67,13 +69,29 @@ function activate(event){
         event.preventDefault();
     }
     if (keybinds[key]){
-        player[keybinds[key]] = true;
+        if (key === "q" && !player.pressedKeys.has("specialMove")){
+            player.specialMoveTimer = Date.now();
+        }
+        player.pressedKeys.add(keybinds[key]);
+            //player[keybinds[key]] = true;
     }
 }
 function deactivate(event){
     let key = event.key;
     if (keybinds[key]){
-        player[keybinds[key]] = false;
+        //player[keybinds[key]] = false;
+        if (key === "q"){
+            console.log(Date.now()-player.specialMoveTimer);
+            if (Date.now()-player.specialMoveTimer < 850){
+                player.shortQTap = true;
+            }
+            else{
+                player.longQTap = true;
+            }
+            player.specialMoveTimer = 0;
+        }
+        player.pressedKeys.delete(keybinds[key]);
+
     }
 
 }
