@@ -1,6 +1,6 @@
 import { canvas, player } from "../main.js";
-import { add_entity, Enemy } from "./entities.js";
-import { dist} from "./utils.js";
+import { Enemy } from "./entities.js";
+import { dist } from "./utils.js";
 
 const level_details = {
     1 : {
@@ -22,64 +22,6 @@ const TileType = {
 let TILE_SIZE = 32;
 let COLLIDER_TILES = [TileType.wall];
 
-class PriorityQueue {
-    constructor() {
-        this.values = [];
-    }
-    enqueue(val, priority) {
-        let newNode = {val : val, priority : priority};
-        this.values.push(newNode);
-        let index = this.values.length - 1;
-        const current = this.values[index];
-
-        while (index > 0) {
-        let parentIndex = Math.floor((index - 1) / 2);
-        let parent = this.values[parentIndex];
-
-        if (parent.priority <= current.priority) {
-            this.values[parentIndex] = current;
-            this.values[index] = parent;
-            index = parentIndex;
-        } else break;
-        }
-    }
-    dequeue() {
-        const max = this.values[0];
-        const end = this.values.pop();
-        this.values[0] = end;
-
-        let index = 0;
-        const length = this.values.length;
-        const current = this.values[0];
-        while (true) {
-        let leftChildIndex = 2 * index + 1;
-        let rightChildIndex = 2 * index + 2;
-        let leftChild, rightChild;
-        let swap = null;
-
-        if (leftChildIndex < length) {
-            leftChild = this.values[leftChildIndex];
-            if (leftChild.priority > current.priority) swap = leftChildIndex;
-        }
-        if (rightChildIndex < length) {
-            rightChild = this.values[rightChildIndex];
-            if (
-            (swap === null && rightChild.priority > current.priority) ||
-            (swap !== null && rightChild.priority > leftChild.priority)
-            )
-            swap = rightChildIndex;
-        }
-
-        if (swap === null) {break;}
-        this.values[index] = this.values[swap];
-        this.values[swap] = current;
-        index = swap;
-        }
-
-        return max;
-    }
-}
-
 class GameManager{
     constructor(){
         this.enemies = [];
@@ -88,7 +30,7 @@ class GameManager{
     construct_enemies(){
         let amt_of_enemies = level_details[this.current_level.id].enemy_count;
         for (let i = 0; i < amt_of_enemies; i++) {
-            this.enemies.push(add_entity(Enemy));
+            this.enemies.push(this.add_entity(Enemy));
         }
     }
     draw(context){
@@ -105,8 +47,36 @@ class GameManager{
             enemy.wander(this.current_level);
         }
     }
+    remove_entity(entity_instance){
+        let index = this.enemies.indexOf(entity_instance);
+        if (index > -1){
+            this.enemies.splice(index,1);
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    add_entity(entity_class){
+        let entity = new entity_class(canvas.width, canvas.height);
+        this.enemies.push(entity);
+        return entity;
+    }
+    entities_in_range(object, range=30){
+        let entities = [];
+        for (let entity of this.enemies){
+            if (entity != object){
+                console.log("dist",dist(entity, object));
+                console.log(entity, player);
+                if (dist(entity, object) <= range){
+                    entities.push(entity);
+                }
+            }
+        }
+        return entities;
+    }
+    
 }
-
 let MAP_SIZE_MODIFIER = 1.5;
 class Level{
     constructor(id){
@@ -205,109 +175,10 @@ class Level{
 
             }
         }
-/*         let curr_tile = [sourceX,sourceY];
-        let path = [curr_tile];
-        let best_choice = 0;
-        if (dist[destX][destY] === Number.MAX_SAFE_INTEGER){
-            console.log("no path"); return;
-        }
-        while (best_choice < dist[destX][destY]){
-            let [curr_x, curr_y] = curr_tile;
-            let adj_tiles = this.get_adjacent_tiles_with_weight(curr_x, curr_y);
-            for (let tile of adj_tiles){
-                let [tile_row, tile_col] = tile.tile;
-                if (Number(dist[tile_row][tile_col]) === best_choice + 1){
-                    best_choice = dist[tile_row][tile_col];
-                    curr_tile = [tile_row, tile_col];
-                    path.push(curr_tile);
-                } 
-            }
-        }
-        console.log(path);
-        return path;
-
- */    
         console.log(dist);
         return dist;
     }
 
-    /*     get_adjacent_tiles_with_weight(row,col){
-        let adj_tiles = [];
-        let type;
-        if (row > 0){
-            type = this.map.get_tile(col,row-1) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
-            adj_tiles.push({
-                tile : [row-1, col],
-                value : type
-            });
-        }
-        if (row < this.map.length - 1){
-            type = this.map.get_tile(col,row+1) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
-            adj_tiles.push({
-                tile : [row+1, col],
-                value : type
-            });
-        }
-        if (col > 0){
-            type = this.map.get_tile(col-1,row) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
-            adj_tiles.push({
-                tile : [row, col-1],
-                value : type
-            });
-        }
-        if (col < this.map[0].length - 1){
-            type = this.map.get_tile(col+1,row) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
-            adj_tiles.push({
-                tile : [row, col+1],
-                value : type
-            });
-        }
-        return adj_tiles;
-    }
-    get_shortest_path(source_tile, destination_tile){
-        let [sourceX, sourceY] = source_tile;
-        let [destX, destY] = destination_tile;
-        let adj = [];
-        for (let row = 0; row < this.map.length; row++){
-            adj.push([]);
-            for (let col = 0; col < this.map[0].length; col++){
-                let adj_tiles = this.get_adjacent_tiles_with_weight(row,col);
-                adj[row].push([]);
-                for (let tile of adj_tiles){
-                    //tile = {tile, value}
-                    adj[row][col].push(tile);
-                }
-            }
-        }
-        let pq = new MinHeap();
-        let dist = [];
-        for (let row = 0; row < this.map.length; row++){
-            dist.push([]);
-            for (let col = 0; col < this.map[0].length; col++){
-                dist[row].push(Number.MAX_SAFE_INTEGER);
-            }
-        }
-        dist[sourceY][sourceX] = 0;
-        pq.push([0, [sourceY,sourceX]]);
-        while (!pq.isEmpty()){
-            let [d,u] = pq.pop();
-            //d = distance int, u = tile(x,y)
-            let [x,y] = u;
-            if (d > dist[y,x]){
-                continue;
-            }
-            for (let tile of adj[y][x]){
-                let [tile_row, tile_col] = tile.tile;
-                if (dist[y,x] + tile.value < dist[tile_row][tile_col]){
-                    dist[tile_row][tile_col] = dist[y,x] + tile.value;
-                    pq.push([dist[tile_row][tile_col], tile.tile]);
-                }
-
-            }
-        }
-        return dist;
-    }
- */    
 
     draw(context){
         let startX = Math.floor(canvas.width/2);
@@ -320,7 +191,7 @@ class Level{
 
         let player_tiles = player.get_current_tiles();
         let [y,x] = player_tiles[0];
-        if (dist(this.player_pos, player) > 500){
+        if (dist(this.player_pos, player) > TILE_SIZE*2){
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
             console.log([y,x], this.distance_to_player);
             this.player_pos = {x : player.x, y : player.y};
@@ -370,11 +241,12 @@ class Level{
             this.clean_map();
         }
         this.add_presets();
+        this.add_world_border();
         this.flood_fill();
         if (!this.check_viability()){
             this.generate_level();
         }
-        //this.add_world_border();
+        
         //console.log(get_shortest_path([0,0],[this.map.length, this.map[0].length]));
     }
     check_viability(){
@@ -415,22 +287,18 @@ class Level{
         }
 
     }
-/*     add_world_border(){
-        for (let i = 0; i < Math.floor(canvas.width/TILE_SIZE); i++){
-            this.map[i][0] = TileType.wall;
-            this.map[i][1] = TileType.wall;
-            this.map[i][Math.floor(canvas.height/TILE_SIZE)] = TileType.wall;
-            this.map[i][Math.floor(canvas.height/TILE_SIZE) - 1] = TileType.wall;
+    add_world_border(){
+        for (let col = 0; col < this.map[0].length; col++){
+            this.map[0][col] = TileType.wall;
+            this.map[this.map.length-1][col] = TileType.wall;
+                
         }
-        for (let j = 0; j < Math.floor(canvas.height/TILE_SIZE); j++){
-            this.map[0][j] = TileType.wall;
-            this.map[1][j] = TileType.wall;
-            this.map[canvas.width/TILE_SIZE][j] = TileType.wall;
-            this.map[canvas.width/TILE_SIZE - 1][j] = TileType.wall;
+        for (let row = 0; row < this.map.length; row++){
+            this.map[row][0] = TileType.wall;
+            this.map[row][this.map[0].length-1] = TileType.wall;
         }
-
     }
- */    clean_map(){
+    clean_map(){
         let newMap = this.map;
         for (let x = 0; x < Math.floor(canvas.width/TILE_SIZE); x += 1){
             for (let y = 0; y < Math.floor(canvas.height/TILE_SIZE); y += 1){

@@ -1,4 +1,4 @@
-import { Player, add_entity } from './modules/entities.js';
+import { Player } from './modules/entities.js';
 import { GameManager } from './modules/levelmanagement.js';
 
 
@@ -21,7 +21,7 @@ function init(){
     canvas.height = window.innerHeight;
 
     game_manager = new GameManager();
-    player = add_entity(Player);
+    player = new Player();
 
     game_manager.current_level.generate_level();
     game_manager.construct_enemies();
@@ -46,7 +46,7 @@ function draw(){
     context.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
     game_manager.draw(context);
-    game_manager.wander_enemies();
+    //game_manager.wander_enemies();
 
     player.draw(context);
 

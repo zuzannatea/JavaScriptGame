@@ -1,6 +1,6 @@
 import { canvas, game_manager, player } from "../main.js";
 import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
-import {dist as calcDist} from "./utils.js";
+import {dist as calcDist,randint} from "./utils.js";
 
 
 let all_entities = [];
@@ -14,10 +14,22 @@ class Entity{
 		this.height = 20;
 		this.xChange = 5;
 		this.yChange = 5;
-		this.health;
+		this.max_health = 50;
+		this.curr_health = 50;
+	}
+	hurt(amount=10){
+		if (this.curr_health - amount >= 0){
+			this.die();
+		}
+		else{
+			this.curr_health = this.curr_health - amount;
+		}
+	}
+	die(){
+		console.log("Died", this);
+		game_manager.remove_entity(this);
 	}
 	try_move(xMove,yMove){
-		//console.log(this.current_tile());
 		if (this.x + this.length + xMove >= this.canvas[0] ||
 			this.x + xMove < 0 ||
 			this.y + this.height + yMove >= this.canvas[1] ||
@@ -35,8 +47,6 @@ class Entity{
 				moved = true;
 			}
 		}
-
-		// Move Y
 		if (yMove !== 0){
 			this.move_by(0,yMove);
 			if (this.tile_colliding()){
@@ -49,37 +59,6 @@ class Entity{
 			return false;
 		}
 		
-/* 		this.move_by(xMove,yMove);
-		let tile_colliding = this.tile_colliding();
-		//if it collides at all, go back and let's split
-		let moved_at_all = true;
-		if (tile_colliding){
-			console.log("Tile collision detected")
-
-			moved_at_all = false;
-			this.move_by(-xMove,-yMove);
-			
-			//if it collides on x axis /but actually y bc i messed up
-			this.move_by(xMove,0);
-			tile_colliding = this.tile_colliding();
-			if (tile_colliding){
-				console.log("Tile collsion with xMove")
-				//yes, it collides on this axis, so try the other
-				this.move_by(-xMove,0);
-			}
-			else{console.log("Moved on x");}
-			
-
-			this.move_by(0,yMove);
-			tile_colliding = this.tile_colliding();
-			if (tile_colliding){
-				this.move_by(0,-yMove);console.log("Tile col y");
-			}
-			else{console.log("Moved on y");}
-		}
-		console.log(moved_at_all);
-		if (moved_at_all === false){console.log("No move");return false;}
- */		
 
 		let entity_colliding = this.entity_colliding();
 		if (entity_colliding){
@@ -156,7 +135,6 @@ class Enemy extends Entity{
 		this.xChange = 5;
 		this.yChange = 5;
 		this.target = {x : this.x, y : this.y};
-		this.health = 50;
 
 		this.colour = "yellow";
 	}
@@ -182,45 +160,6 @@ class Enemy extends Entity{
 		}
 		return point;
 	}
-/* 	get_next_best_tile(distance,priority=0){
-		let current_tiles = this.get_current_tiles();
-		let possible_tiles = [];
-		let [y_current, x_current] = current_tiles[0];
-		if (y_current < distance.length-1){
-			possible_tiles.push({
-				tile : [y_current+1,x_current],
-				value : distance[y_current+1][x_current]});
-		}
-		if (y_current > 0){
-			possible_tiles.push({
-				tile : [y_current-1, x_current],
-				value : distance[y_current-1][x_current]});
-		}
-		if (x_current < distance[0].length-1){
-			possible_tiles.push({
-				tile : [y_current, x_current-1],
-				value : distance[y_current][x_current-1]});
-		}
-		if (x_current > 0){
-			possible_tiles.push({
-				tile : [y_current, x_current+1],
-				value : distance[y_current][x_current+1]});
-		}
-		possible_tiles.sort((a, b) => a.value - b.value);
-		if (possible_tiles.length === 0){console.log("length 0");return [y_current,x_current];}
-		if (possible_tiles[priority].value === Number.MAX_SAFE_INTEGER){
-			console.log("infinity");return [y_current,x_current];
-		}
-		if (possible_tiles[priority].value < 2){
-			this.colour = "orange";
-			return possible_tiles[priority].tile;
-		}
- 		console.log('poss tiles',possible_tiles);
-		console.log("chosen values", possible_tiles[priority].value);
- 		
-		return possible_tiles[priority].tile;
-
-	}*/
 
 	
 	get_next_best_move(distance,priority){
@@ -261,32 +200,11 @@ class Enemy extends Entity{
 		if (possible_tiles[priority].value === Number.MAX_SAFE_INTEGER){
 			console.log("infinity");return [0,0];
 		}
-		if (possible_tiles[priority].value < 4){
-			this.colour = this.colour != "black" ? "orange" : "black";
-			return possible_tiles[priority].move;
-		}
-		//console.log('poss tiles',possible_tiles);
-
-		//console.log("chosen value", possible_tiles[priority].value);
-		//console.log(possible_tiles[priority].move);
-		//console.log("For priority", priority, "move is", possible_tiles[priority].move);
 		return possible_tiles[priority].move;
 	}
 
-/* 	assign_next_tile(current_level, priority=0){
-		let next_best_tile = this.get_next_best_tile(current_level.distance_to_player, priority);
-		let next_best_point = {
-			x: (next_best_tile[1]*TILE_SIZE) + TILE_SIZE/2, 
-			y: (next_best_tile[0]*TILE_SIZE) + TILE_SIZE/2};
-		console.log(next_best_tile, next_best_point);
-		//this.check_proximity();
-		this.target = next_best_point;
-
-
-	}
- */	
 	attack_charge(){
-		if (calcDist(this,player) >= 64){
+		if (calcDist(this,player) >= 90){
 			let xMove; let yMove;
 			let dx = player.x - this.x;
 			let dy = player.y - this.y;
@@ -297,53 +215,37 @@ class Enemy extends Entity{
 			yMove = (dy*this.yChange);
 			this.try_move(xMove, yMove);
 		}
- 		if (calcDist(this,player) < 64){
+
+		if (calcDist(this,player) < 90){
 			this.colour = "black";
 			player.curr_health -= 10;
+		}else{this.colour = "orange";}
+
+	}
+	snap_to_tile(){
+		this.x = Math.floor(this.x / TILE_SIZE) * TILE_SIZE + (TILE_SIZE - this.length) / 2;
+		this.y = Math.floor(this.y / TILE_SIZE) * TILE_SIZE + (TILE_SIZE - this.height) / 2;
+	}
+	wander(current_level, priority=0){
+		if (calcDist(this,player) < 124){
+			console.log("now");
+			this.colour = "orange";
+			this.attack_charge();
+		}
+		else{
+			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			while(!this.try_move(xMove * this.xChange/2, yMove * this.yChange/2)){
+				this.snap_to_tile();
+				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			} 
 		}
 
 	}
-	wander(current_level, priority=0){
-		if (calcDist(this,player) < 264){
-			this.attack_charge();
-			return;
-		}
-		let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
-
-		// move one axis at a time
-
-		while(!this.try_move(xMove * this.xChange/2, yMove * this.yChange/2)){
-			
-			[xMove, yMove] = [randint(-3,3), randint(-3,3)];
-
-		} 
-		
 	
-			/* 		
- let dx = this.target.x - this.x;
-		let dy = this.target.y - this.y;
-		let dist = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
-		dx = dx/dist;
-		dy = dy/dist;
-		xMove = (dx*this.xChange);
-		yMove = (dy*this.yChange);
- */		
-
-
-		//console.log(this.x, this.y, xMove, yMove);
- 		
-/* 		if (!this.try_move(xMove*(this.xChange/2), yMove*(this.yChange/2))){
-			console.log("PRIORITY: ", priority);
-			this.wander(current_level,priority+1);
-		}
- */ /* 		if (!this.try_move(xMove,yMove)){
-			this.assign_next_tile(current_level,1);
-		}
- */	}
 	
 	draw(context){
-		context.fillStyle = "orange";
-		context.fillRect(this.x, this.y - 10, this.health/this.length, 5);
+		context.fillStyle = "red";
+		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
 		context.fillStyle = this.colour;
 		context.fillRect(this.x, this.y, this.length, this.height);
 	}
@@ -360,17 +262,6 @@ class Enemy extends Entity{
 	}
 
 
-  //PLACEHOLDER METHODS! so enemies don't get stuck in collision
-/* 	entity_colliding(){
-		for (let entity of all_entities){
-			if (is_colliding(this,entity) && this != entity && player != entity){
-				this.target = this.pick_a_point();
-				return entity;
-			}
-		}
-		return false;
-	}
-		*/
 	tile_colliding(){
 		let all_tiles = this.get_current_tiles();
 		let collisions = [];
@@ -410,6 +301,8 @@ class Player extends Entity{
 		this.moveRight = false;
 		this.moveDown = false; 
 		this.isAttacking = false;
+
+		this.colour = "cyan";
 	
 	}
 	move(){
@@ -425,10 +318,22 @@ class Player extends Entity{
 		if (this.moveDown){
 			this.try_move(0,this.yChange);
 		}
+		if (this.isAttacking){
+			console.log("Is");
+			let entities = game_manager.entities_in_range(this);
+			console.log(entities);
+			if (entities.length != 0){
+				console.log("Happens");
+				this.colour = "yellow";
+				let entity = entities.pop();
+				entity.hurt(25);
+				//console.log(entity.health);
+			}
+			else{this.colour = "cyan";}
+		}
 	}
 	draw(context){
-		if (this.isAttacking){context.fillStyle = "purple";}
-		else{context.fillStyle = "cyan";}
+		context.fillStyle = this.colour;
 		context.fillRect(this.x, this.y, this.length, this.height);
 		context.fillStyle = "red";
 		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
@@ -436,6 +341,13 @@ class Player extends Entity{
 	}
 
 
+}
+
+class MoveManager{
+	constructor(){
+		this.all_moves = [];
+		this.current_moves = [];
+	}
 }
 
 class Move{
@@ -473,41 +385,8 @@ function is_in_range(object1, object2, attack_range=20){
 	return false;
 }
 
-function randint(min,max){
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function add_entity(entity_class){
-	let entity = new entity_class(canvas.width, canvas.height);
-	all_entities.push(entity);
-	return entity;
-}
-function remove_entity(entity_instance){
-	let index = all_entities.indexOf(entity_instance);
-	if (index > -1){
-		all_entities.splice(index,1);
-		return true;
-	}
-	else{
-		return false;
-	}
-}
-
-/* function dist(p1,p2){
-	//console.log(Math.sqrt(Math.pow((p1.x-p2.x),2)) + Math.pow((p1.y-p2.y),2));
-	return Math.sqrt(Math.pow((p1.x-p2.x),2)) + Math.pow((p1.y-p2.y),2);
-}
- */function remove_item(item,array){
-	let index = array.indexOf(item);
-	if (index === -1){
-		return array;
-	}
-	else{
-		array.splice(index,1);
-		return array;
-	}
-}
 
 
-export { Enemy, Player, add_entity };
+
+export { Enemy, Player };
 

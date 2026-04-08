@@ -1,14 +1,21 @@
 TODO
-fix Dijkstra
-add back world border
-add primitive combat to enemies 
-add primitive combat to player
+fix Dijkstra (Y)
+add back world border (Y)
+add primitive combat to enemies (Y)
+add primitive combat to player (Y)
+fix distance calc (Y)
+
 
 FURTHER 
 add extra moves on Q
 add modifiable 3 stats 
 
 
-- switched to row/col names for tileset
-to improve performance:
-- changed sorting array into priority queue 
+fixed
+- Fixed enemy collision by snapping to tile
+- Fixed distances for enemy combat
+- Fixed distance function, missing bracket
+- Made all_entities redundant
+- Moved all_entities-related functions into Game Master class 
+- Added hurt() and die() methods to Entity class
+- Added back world borders 
