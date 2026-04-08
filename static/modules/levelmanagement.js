@@ -4,7 +4,7 @@ import { dist} from "./utils.js";
 
 const level_details = {
     1 : {
-        enemy_count : 2
+        enemy_count : 1
     },
 }
 /* const level_details = {
