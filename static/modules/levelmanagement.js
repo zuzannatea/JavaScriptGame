@@ -1,6 +1,6 @@
 import { canvas, player } from "../main.js";
 import { add_entity, Enemy } from "./entities.js";
-import { dist } from "./utils.js";
+import { dist} from "./utils.js";
 
 const level_details = {
     1 : {
