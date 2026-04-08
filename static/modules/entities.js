@@ -1,5 +1,7 @@
 import { canvas, game_manager, player } from "../main.js";
 import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
+import {dist as calcDist} from "./utils.js";
+
 
 let all_entities = [];
 
@@ -27,12 +29,29 @@ class Entity{
 		
 		this.move_by(xMove,yMove);
 		let tile_colliding = this.tile_colliding();
+		//if it collides at all, go back and let's split
+		let moved_at_all = true;
 		if (tile_colliding){
+			moved_at_all = false;
 			this.move_by(-xMove,-yMove);
-	/* 		let distance = this.estimate_distance(tile_colliding,this,xMove,yMove);
-			this.move_by(distance[0],distance[1]);
-	*/        return false; 
-		}
+			//if it collides on x axis /but actually y bc i messed up
+			this.move_by(xMove,0);
+			tile_colliding = this.tile_colliding();
+			if (tile_colliding){
+				//yes, it collides on this axis, so try the other
+				this.move_by(-xMove,0);
+			}
+			else{moved_at_all = true;}
+			this.move_by(0,yMove);
+			tile_colliding = this.tile_colliding();
+			if (tile_colliding){
+				this.move_by(0,-yMove);
+			}
+			else{moved_at_all=true;}
+			}
+		if (moved_at_all === false){return false;}
+		
+
 		let entity_colliding = this.entity_colliding();
 		if (entity_colliding){
 			this.move_by(-xMove,-yMove);
@@ -41,12 +60,12 @@ class Entity{
 			return false; 
 		}
 		return true;
-  }
+	}
 	move_by(xMove,yMove){
 		this.x = this.x + xMove;
 		this.y = this.y + yMove;
 	}
-  	estimate_distance(object, entity_colliding, xMove, yMove){
+	estimate_distance(object, entity_colliding, xMove, yMove){
 		if (xMove < 0){
 			xMove = (object.x - entity_colliding.x - entity_colliding.length) * -1;
 		}
@@ -62,22 +81,22 @@ class Entity{
 		return [xMove, yMove];
 	
 	}
-  tile_colliding(){
-	let all_tiles = this.get_current_tiles();
-	let collisions = [];
-	for (let tile of all_tiles){
-		if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
-			collisions.push({
-				x : tile[0],
-				y : tile[1],
-				length : TILE_SIZE,
-				height : TILE_SIZE,
-			});
+	tile_colliding(){
+		let all_tiles = this.get_current_tiles();
+		let collisions = [];
+		for (let tile of all_tiles){
+			if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
+				collisions.push({
+					x : tile[0],
+					y : tile[1],
+					length : TILE_SIZE,
+					height : TILE_SIZE,
+				});
+			}
 		}
+		if (collisions.length > 0){return collisions;}
+		return false;
 	}
-	if (collisions.length > 0){return collisions;}
-	return false;
-  }
 	get_current_tiles(x = this.x, y = this.y, length = this.length, height = this.height){
 		let pos1 = [Math.floor(x/TILE_SIZE), Math.floor(y/TILE_SIZE)];
 		let pos2 = [Math.floor((x+length)/TILE_SIZE), Math.floor(y/TILE_SIZE)];
@@ -87,164 +106,220 @@ class Entity{
 	}
 	
 	entity_colliding(){
-	for (let entity of all_entities){
-		if (is_colliding(this,entity) && this != entity){
-			return entity;
+		for (let entity of all_entities){
+			if (is_colliding(this,entity) && this != entity){
+				return entity;
+			}
 		}
+		return false;
 	}
-	return false;
-  }
 
 }
 
 class Enemy extends Entity{
-  constructor(width, height) {
-	super();
-	this.canvas = [width, height];
-	this.x;
-	this.y;
-	let point = this.pick_a_point();
-	[this.x, this.y] = [point.x, point.y];
-	this.xChange = 5;
-	this.yChange = 5;
-	this.target = {x : randint(this.length, width - this.length), y : randint(this.height, height - this.height)};
-	this.health = 50;
-  }
-  
-  pick_a_point(){
-	let cleared = false; 
-	let point;
-	let tiles;
-	let checker = false;
- 	while (!cleared){
-		point = {x : randint(this.length, this.canvas[0] - this.length), y : randint(this.height, this.canvas[1] - this.height)};
-		tiles = this.get_current_tiles(point.x, point.y);
-		checker = true;
-		for (let tile of tiles){
-			if (game_manager.current_level.get_tile(tile[0],tile[1]) === "red"){
-				checker = false;
-				continue;
+	constructor(width, height) {
+		super();
+		this.canvas = [width, height];
+		this.x;
+		this.y;
+		let point = this.pick_a_point();
+		[this.x, this.y] = [point.x, point.y];
+		this.xChange = 5;
+		this.yChange = 5;
+		this.target = {x : this.x, y : this.y};
+		this.health = 50;
+
+		this.colour = "yellow";
+	}
+
+	pick_a_point(){
+		let cleared = false; 
+		let point;
+		let tiles;
+		let checker = false;
+		while (!cleared){
+			point = {x : randint(this.length, this.canvas[0] - this.length), y : randint(this.height, this.canvas[1] - this.height)};
+			tiles = this.get_current_tiles(point.x, point.y);
+			checker = true;
+			for (let tile of tiles){
+				if (game_manager.current_level.get_tile(tile[0],tile[1]) === "red"){
+					checker = false;
+					continue;
+				}
+			}
+			if (checker === true){
+				cleared = true;
 			}
 		}
-		if (checker === true){
-			cleared = true;
+		return point;
+	}
+	get_next_best_tile(distance,priority=0){
+		let current_tiles = this.get_current_tiles();
+		let possible_tiles = [];
+		let [y_current, x_current] = current_tiles[0];
+		if (y_current < distance.length-1){
+			possible_tiles.push({
+				tile : [y_current+1,x_current],
+				value : distance[y_current+1][x_current]});
+		}
+		if (y_current > 0){
+			possible_tiles.push({
+				tile : [y_current-1, x_current],
+				value : distance[y_current-1][x_current]});
+		}
+		if (x_current < distance[0].length-1){
+			possible_tiles.push({
+				tile : [y_current, x_current-1],
+				value : distance[y_current][x_current-1]});
+		}
+		if (x_current > 0){
+			possible_tiles.push({
+				tile : [y_current, x_current+1],
+				value : distance[y_current][x_current+1]});
+		}
+		possible_tiles.sort((a, b) => a.value - b.value);
+		if (possible_tiles.length === 0){console.log("length 0");return [y_current,x_current];}
+		if (possible_tiles[priority].value === Number.MAX_SAFE_INTEGER){
+			console.log("infinity");return [y_current,x_current];
+		}
+		if (possible_tiles[priority].value < 2){
+			this.colour = "green";
+			return possible_tiles[priority].tile;
+		}
+		console.log("chosen value", possible_tiles[priority].value);
+		return possible_tiles[priority].tile;
+
+
+
+	}
+	assign_next_tile(current_level, priority=0){
+		let next_best_tile = this.get_next_best_tile(current_level.distance_to_player, priority);
+		let next_best_point = {
+			x: (next_best_tile[1]*TILE_SIZE) + TILE_SIZE/2, 
+			y: (next_best_tile[0]*TILE_SIZE) + TILE_SIZE/2};
+		console.log(next_best_tile, next_best_point);
+		//this.check_proximity();
+		this.target = next_best_point;
+
+
+	}
+	wander(current_level){
+		if (calcDist(this.target, this) < 32){
+			this.assign_next_tile(current_level);
+		}
+		/* if (this.target.length === 0 || is_in_range(this,this.target, 40)){
+			this.target = this.pick_a_point();} */
+		let xMove;
+		let yMove;
+		let dx = this.target.x - this.x;
+		let dy = this.target.y - this.y;
+		let dist = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
+		
+		dx = dx/dist;
+		dy = dy/dist;
+
+		
+		xMove = (dx*this.xChange);
+		yMove = (dy*this.yChange);
+		console.log(this.x, this.y, xMove, yMove);
+		if (!this.try_move(xMove,yMove)){
+			this.assign_next_tile(current_level,1);
 		}
 	}
- 	return point;
-  }
-  wander(){
-	this.check_proximity();
-
-	if (this.target.length === 0 || is_in_range(this,this.target, 40)){
-		this.target = this.pick_a_point();}
-	let xMove;
-	let yMove;
-	let dx = this.target.x - this.x;
-	let dy = this.target.y - this.y;
-	let dist = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
-	dx = dx/dist;
-	dy = dy/dist;
-
-	xMove = dx*this.xChange;
-	yMove = dy*this.yChange;
-
-	this.try_move(xMove,yMove);
-	}
-  
-  draw(context){
-	context.fillStyle = "orange";
-	context.fillRect(this.x, this.y - 10, this.health/this.length, 5);
-	context.fillStyle = "yellow";
-	context.fillRect(this.x, this.y, this.length, this.height);
-  }
-  check_proximity(){
-	if (dist(this,player) < 100){
-		this.target = {x : player.x, y : player.y};
-		console.log("Detected");
-	}
-	if (is_in_range(this,player)){
-		player.health = player.health - 10;
-		console.log("Attacked");
-	}
 	
-  }
+	draw(context){
+		context.fillStyle = "orange";
+		context.fillRect(this.x, this.y - 10, this.health/this.length, 5);
+		context.fillStyle = this.colour;
+		context.fillRect(this.x, this.y, this.length, this.height);
+	}
+	check_proximity(){
+		if (dist(this,player) < 100){
+			this.target = {x : player.x, y : player.y};
+			console.log("Detected");
+		}
+		if (is_in_range(this,player)){
+			player.health = player.health - 10;
+			console.log("Attacked");
+		}
+		
+	}
 
 
   //PLACEHOLDER METHODS! so enemies don't get stuck in collision
-  entity_colliding(){
-	for (let entity of all_entities){
-		if (is_colliding(this,entity) && this != entity && player != entity){
-			this.target = this.pick_a_point();
-			return entity;
+/* 	entity_colliding(){
+		for (let entity of all_entities){
+			if (is_colliding(this,entity) && this != entity && player != entity){
+				this.target = this.pick_a_point();
+				return entity;
+			}
 		}
+		return false;
 	}
-	return false;
-  }
-  tile_colliding(){
-	let all_tiles = this.get_current_tiles();
-	let collisions = [];
-	for (let tile of all_tiles){
-		if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
-			collisions.push({
-				x : tile[0],
-				y : tile[1],
-				length : TILE_SIZE,
-				height : TILE_SIZE,
-			});
+		*/
+	tile_colliding(){
+		let all_tiles = this.get_current_tiles();
+		let collisions = [];
+		for (let tile of all_tiles){
+			if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
+				collisions.push({
+					x : tile[0],
+					y : tile[1],
+					length : TILE_SIZE,
+					height : TILE_SIZE,
+				});
+			}
 		}
+		if (collisions.length > 0){
+			return collisions;}
+		return false;
 	}
-	if (collisions.length > 0){
-		this.target = this.pick_a_point();
-
-		return collisions;}
-	return false;
-  }
 
 }
 
 class Player extends Entity{
-  constructor(width, height) {
-	super();
-	this.canvas = [width,height];
-	this.x = Math.floor(canvas.width/2);
-	this.y = Math.floor(canvas.height/2);
+	constructor(width, height) {
+		super();
+		this.canvas = [width,height];
+		this.x = Math.floor(canvas.width/2);
+		this.y = Math.floor(canvas.height/2);
 
-	this.max_health = 100;
-	this.curr_health = 100;
-	this.score = 0;
-	this.extraMoves = [];
+		this.max_health = 100;
+		this.curr_health = 100;
+		this.score = 0;
+		this.extraMoves = [];
 
-	this.xChange = 2;
-	this.yChange = 2;
- 	this.moveLeft = false;
-	this.moveUp = false;
-	this.moveRight = false;
-	this.moveDown = false; 
-	this.isAttacking = false;
- 
-  }
-  move(){
-	if (this.moveRight){
-		this.try_move(this.xChange,0);
+		this.xChange = 2;
+		this.yChange = 2;
+		this.moveLeft = false;
+		this.moveUp = false;
+		this.moveRight = false;
+		this.moveDown = false; 
+		this.isAttacking = false;
+	
 	}
-	if (this.moveLeft){
-		this.try_move(-this.xChange,0);
+	move(){
+		if (this.moveRight){
+			this.try_move(this.xChange,0);
+		}
+		if (this.moveLeft){
+			this.try_move(-this.xChange,0);
+		}
+		if (this.moveUp){
+			this.try_move(0,-this.yChange);
+		}
+		if (this.moveDown){
+			this.try_move(0,this.yChange);
+		}
 	}
-	if (this.moveUp){
-		this.try_move(0,-this.yChange);
-	}
-	if (this.moveDown){
-		this.try_move(0,this.yChange);
-	}
-  }
-  draw(context){
-	if (this.isAttacking){context.fillStyle = "purple";}
-	else{context.fillStyle = "cyan";}
-	context.fillRect(this.x, this.y, this.length, this.height);
-	context.fillStyle = "red";
-	context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
+	draw(context){
+		if (this.isAttacking){context.fillStyle = "purple";}
+		else{context.fillStyle = "cyan";}
+		context.fillRect(this.x, this.y, this.length, this.height);
+		context.fillStyle = "red";
+		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
 
-  }
+	}
 
 
 }
@@ -304,10 +379,11 @@ function remove_entity(entity_instance){
 	}
 }
 
-function dist(p1,p2){
+/* function dist(p1,p2){
+	//console.log(Math.sqrt(Math.pow((p1.x-p2.x),2)) + Math.pow((p1.y-p2.y),2));
 	return Math.sqrt(Math.pow((p1.x-p2.x),2)) + Math.pow((p1.y-p2.y),2);
 }
-function remove_item(item,array){
+ */function remove_item(item,array){
 	let index = array.indexOf(item);
 	if (index === -1){
 		return array;
@@ -319,5 +395,5 @@ function remove_item(item,array){
 }
 
 
-export { Enemy, Player, add_entity, dist };
+export { Enemy, Player, add_entity };
 

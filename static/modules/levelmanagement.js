@@ -1,5 +1,6 @@
-import { canvas, player, game_manager } from "../main.js";
-import { add_entity, Enemy, dist } from "./entities.js";
+import { canvas, player } from "../main.js";
+import { add_entity, Enemy } from "./entities.js";
+import { dist } from "./utils.js";
 
 const level_details = {
     1 : {
@@ -20,6 +21,64 @@ const TileType = {
 }
 let TILE_SIZE = 32;
 let COLLIDER_TILES = [TileType.wall];
+
+class PriorityQueue {
+    constructor() {
+        this.values = [];
+    }
+    enqueue(val, priority) {
+        let newNode = {val : val, priority : priority};
+        this.values.push(newNode);
+        let index = this.values.length - 1;
+        const current = this.values[index];
+
+        while (index > 0) {
+        let parentIndex = Math.floor((index - 1) / 2);
+        let parent = this.values[parentIndex];
+
+        if (parent.priority <= current.priority) {
+            this.values[parentIndex] = current;
+            this.values[index] = parent;
+            index = parentIndex;
+        } else break;
+        }
+    }
+    dequeue() {
+        const max = this.values[0];
+        const end = this.values.pop();
+        this.values[0] = end;
+
+        let index = 0;
+        const length = this.values.length;
+        const current = this.values[0];
+        while (true) {
+        let leftChildIndex = 2 * index + 1;
+        let rightChildIndex = 2 * index + 2;
+        let leftChild, rightChild;
+        let swap = null;
+
+        if (leftChildIndex < length) {
+            leftChild = this.values[leftChildIndex];
+            if (leftChild.priority > current.priority) swap = leftChildIndex;
+        }
+        if (rightChildIndex < length) {
+            rightChild = this.values[rightChildIndex];
+            if (
+            (swap === null && rightChild.priority > current.priority) ||
+            (swap !== null && rightChild.priority > leftChild.priority)
+            )
+            swap = rightChildIndex;
+        }
+
+        if (swap === null) {break;}
+        this.values[index] = this.values[swap];
+        this.values[swap] = current;
+        index = swap;
+        }
+
+        return max;
+    }
+}
 
 class GameManager{
     constructor(){
@@ -42,10 +101,10 @@ class GameManager{
         }
     }
     wander_enemies(){
-         for (let enemy of this.enemies){
-            enemy.wander();
+        for (let enemy of this.enemies){
+            enemy.wander(this.current_level);
         }
-     }
+    }
 }
 
 let MAP_SIZE_MODIFIER = 1.5;
@@ -53,8 +112,10 @@ class Level{
     constructor(id){
         this.id = id;
         this.map = [];
+        //for pathfindi g
         this.to_be_drawn = [];
-        this.player_tile = 0;
+        this.player_pos = {x:0, y:0};
+        this.distance_to_player = [];
     }
     get_adjacent_tiles_with_weight(row,col){
         let adj_tiles = [];
@@ -93,7 +154,7 @@ class Level{
         return pq.sort((a, b) => a.value - b.value);
     }
     get_shortest_path(source_tile, destination_tile){
-        console.log("Ran");
+        //console.log("Ran");
         let [sourceX, sourceY] = source_tile;
         let [destX, destY] = destination_tile;
         if (this.get_tile(destX, destY) === "red" || this.get_tile(sourceX,sourceY) === "red"){
@@ -101,7 +162,7 @@ class Level{
             return -1;
         }
         let adj = [];
-        console.log("input read");
+        //console.log("input read");
         for (let row = 0; row < this.map.length; row++){
             adj.push([]);
             for (let col = 0; col < this.map[0].length; col++){
@@ -113,7 +174,7 @@ class Level{
             }
         }
         let pq = [];
-        console.log("got to adj; ", adj);
+        //console.log("got to adj; ", adj);
         let dist = [];
         for (let row = 0; row < this.map.length; row++){
             dist.push([]);
@@ -144,7 +205,7 @@ class Level{
 
             }
         }
-        let curr_tile = [sourceX,sourceY];
+/*         let curr_tile = [sourceX,sourceY];
         let path = [curr_tile];
         let best_choice = 0;
         if (dist[destX][destY] === Number.MAX_SAFE_INTEGER){
@@ -164,6 +225,10 @@ class Level{
         }
         console.log(path);
         return path;
+
+ */    
+        console.log(dist);
+        return dist;
     }
 
     /*     get_adjacent_tiles_with_weight(row,col){
@@ -252,10 +317,13 @@ class Level{
 /*         let offsetX = ((startX - playerPosX) / TILE_SIZE);
         let offsetY = ((startY - playerPosY) / TILE_SIZE);
  */   
+
         let player_tiles = player.get_current_tiles();
         let [y,x] = player_tiles[0];
-        if (player_tiles[0] != this.player_tile){
-        this.to_be_drawn = this.get_shortest_path([y,x], [this.map.length/2+5,this.map[0].length/2+5]);
+        if (dist(this.player_pos, player) > 500){
+            this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
+            console.log([y,x], this.distance_to_player);
+            this.player_pos = {x : player.x, y : player.y};
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
             for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
