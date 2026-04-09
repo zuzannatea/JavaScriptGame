@@ -1,18 +1,14 @@
 
 TODO
-- make Dijstra work only in a certain range of player; otherwise random wandering 
 - add actual move logic for combat 
-- add level up logic + display it
-
-- ADD PLAYER SCORE!! and levels too!
-
 - add enemy types: 
-    - basic zombie (basically Y)
     - swarm enemy 
     (if in s)
-    - charger enemy
-    - splitter enemy 
     - teleportation enemy 
+- make levels traversible 
+    - unblock door after reaching a certain score
 
 
 fixed:
+- Added points variable to enemies
+- Modified AbilityManager 

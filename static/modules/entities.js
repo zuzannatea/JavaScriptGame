@@ -21,7 +21,7 @@ class Entity{
 
 		this.last_attack = Date.now(); 
 	}
-	hurt(amount=10){
+	take_damage(amount=10){
 		if (Date.now() - this.last_attack < 500 || this.curr_health <= 0){
 			return;
 		}
@@ -140,6 +140,7 @@ class Enemy extends Entity{
 		this.canvas = [width, height];
 		this.x;
 		this.y;
+		this.points = 10;
 		let point = this.pick_a_point();
 		[this.x, this.y] = [point.x, point.y];
 		this.speed = 2.5;
@@ -267,7 +268,7 @@ class Enemy extends Entity{
 
 		if (calcDist(this,player) < 25){
 			this.colour = "black";
-			player.hurt(this.strength);
+			player.take_damage(this.strength);
 		}else{this.colour = "orange";}
 
 	}
@@ -439,7 +440,7 @@ class Charger extends Enemy{
 
 		if (player_distance < 32){
 			this.colour = "black";
-			player.hurt(this.strength);
+			player.take_damage(this.strength);
 		}
 		else{this.colour = "maroon";}
 
@@ -596,9 +597,8 @@ class Player extends Entity{
 		}
 	}
 	attack(target){
-		if (target.hurt(this.strength)){
-			console.log("KILLED: ",target);
-			this.score += 10;
+		if (target.take_damage(this.strength)){
+			this.score += target.points;
 		}
 
 	}
@@ -619,11 +619,21 @@ class Player extends Entity{
 class AbilityManager{
 	constructor(){
 		this.all_abilities = [Smash, Roll, Charge];
-		this.current_abilities = {
-			smash : undefined, 
-			roll : undefined, 
-			charge : undefined
+		this.current_abilities_levels = {
+			smash : 0, 
+			roll : 0, 
+			charge : 0
 		};
+		this.current_abilities = {};
+	}
+	gain_ability(name){
+		if (this.current_abilities_levels[name]){
+			if (this.current_abilities_levels[name] === 0){
+				this.current_abilities_levels[name] = new name();
+				return true;
+			}
+		}
+		return false;
 	}
 	roll(){
 		console.log("roll");
@@ -654,6 +664,7 @@ class Smash extends Ability{
 }
 class Roll extends Ability{
 	use(){
+		
 
 	}
 }
