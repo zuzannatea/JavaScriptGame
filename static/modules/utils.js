@@ -15,5 +15,12 @@ function remove_item(item,array){
 function randint(min,max){
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+function wait(ms){
+	var start = new Date().getTime();
+	var end = start;
+	while(end < start + ms) {
+		end = new Date().getTime();
+	}
+}
 
-export {dist,randint}
+export {dist,randint,wait}

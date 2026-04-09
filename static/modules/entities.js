@@ -22,14 +22,17 @@ class Entity{
 		this.last_attack = Date.now(); 
 	}
 	hurt(amount=10){
-		if (Date.now() - this.last_attack < 500){
+		if (Date.now() - this.last_attack < 500 || this.curr_health <= 0){
 			return;
 		}
-		if (this.curr_health - amount >= 0){
+		if (this.curr_health - amount <= 0){
+			this.curr_health = 0;
 			this.die();
+			return true;
 		}
 		else{
 			this.curr_health = this.curr_health - amount;
+			return false;
 		}
 	}
 	die(){
@@ -121,7 +124,7 @@ class Entity{
 	}
 	
 	entity_colliding(){
-		for (let entity of all_entities){
+		for (let entity of game_manager.enemies){
 			if (is_colliding(this,entity) && this != entity){
 				return entity;
 			}
@@ -167,7 +170,47 @@ class Enemy extends Entity{
 		return point;
 	}
 
-	
+	update(current_level, priority=0){
+		if (calcDist(this,player) > 300){
+			this.colour = "purple";
+			
+			this.wander();
+		}
+		else if (calcDist(this,player) < 50){
+			this.colour = "orange";
+			this.attack_charge();
+		}
+		else{
+			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
+				this.snap_to_tile();
+				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			} 
+		}
+	}
+	wander(){
+		if (this.target.length === 0 || is_in_range(this,this.target, 30)){
+			this.target = this.pick_a_point();
+		}
+		let xMove;
+		let yMove;
+		let dx = this.target.x - this.x;
+		let dy = this.target.y - this.y;
+		let distance = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
+		if (distance <= 0.1){
+			this.target = this.pick_a_point();
+			return;
+		}
+		dx = dx/distance;
+		dy = dy/distance;
+		xMove = dx*this.speed/4;
+		yMove = dy*this.speed/4;
+		if (!(this.try_move(xMove,0) && this.try_move(0, yMove))){
+			this.snap_to_tile();
+			this.target = this.pick_a_point();
+		}
+	}
+
 	get_next_best_move(distance,priority){
 		
 		let current_tiles = this.get_current_tiles();
@@ -231,23 +274,8 @@ class Enemy extends Entity{
 	snap_to_tile(){
 		this.x = Math.floor(this.x / TILE_SIZE) * TILE_SIZE + (TILE_SIZE - this.length) / 2;
 		this.y = Math.floor(this.y / TILE_SIZE) * TILE_SIZE + (TILE_SIZE - this.height) / 2;
-	}
-	wander(current_level, priority=0){
-		if (calcDist(this,player) < 50){
-			console.log("now");
-			this.colour = "orange";
-			this.attack_charge();
-		}
-		else{
-			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
-			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
-				this.snap_to_tile();
-				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
-			} 
-		}
-
-	}
-	
+		
+	}	
 	
 	draw(context){
 		context.fillStyle = "red";
@@ -288,6 +316,42 @@ class Enemy extends Entity{
 
 }
 
+class Zombie extends Enemy{
+	constructor(width, height) {
+		super(width, height);
+
+		this.colour = "teal";
+	}
+	update(current_level, priority=0){
+		if (calcDist(this,player) < 50){
+			console.log("now");
+			this.colour = "orange";
+			this.attack_charge();
+		}
+		else{
+			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
+				this.snap_to_tile();
+				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			} 
+		}
+	}
+
+}
+
+class SwarmMind extends Enemy{
+
+}
+class Charger extends Enemy{
+
+}
+class Splitter extends Enemy{
+
+}
+class Teleporter extends Enemy{
+
+}
+
 class Player extends Entity{
 	constructor(width, height) {
 		super();
@@ -305,16 +369,31 @@ class Player extends Entity{
 		
 		this.pressedKeys = new Set();
 
-		this.specialMoveTimer;
+		this.keyPressTimer;
 		this.cooldown = 0; 
+		this.pauseCooldown = 0;
 		this.longQTap = false;
 		this.shortQTap = false;
+
+		this.running = true;
 
 		this.colour = "cyan";
 	
 	}
-	move(){
+	update(){
+		this.pauseCooldown = Math.max(this.pauseCooldown - 1,0);
+		if (this.pauseCooldown <= 0){
+			if (this.pressedKeys.has("running")){
+				this.running = !this.running;
+				this.pauseCooldown = 5;
+			}
+		}
+		if (!this.running){
+			return;
+		}
+
 		this.cooldown = Math.max(this.cooldown - 1,0);
+
 		if (this.pressedKeys.has("moveRight")){
 			this.try_move(this.speed,0);
 		}
@@ -334,14 +413,14 @@ class Player extends Entity{
 			if (entities.length != 0){
 				this.colour = "yellow";
 				let entity = entities.pop();
-				entity.hurt(this.strength);
+				this.attack(entity);
 				//console.log(entity.health);
 			}
 			else{this.colour = "cyan";}
 		}
 
 		if (this.cooldown <= 0){
-			if (this.pressedKeys.has("specialMoveModifierKey")){
+			if (this.pressedKeys.has("specialMoveModifier")){
 				this.ability_manager.charge();
 				this.cooldown = 25;
 			
@@ -358,11 +437,21 @@ class Player extends Entity{
 			}
 		}
 	}
+	attack(target){
+		if (target.hurt(this.strength)){
+			console.log("KILLED: ",target);
+			this.score += 10;
+		}
+
+	}
 	draw(context){
 		context.fillStyle = this.colour;
 		context.fillRect(this.x, this.y, this.length, this.height);
 		context.fillStyle = "red";
 		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
+		context.font = "50px Arial";
+		context.fillStyle = "black";
+		context.fillText("Score: "+this.score,10,80);
 
 	}
 
@@ -430,7 +519,7 @@ function is_colliding(object1, object2){
 }
 
 function is_in_range(object1, object2, attack_range=20){
-	if (dist(object1, object2) < attack_range){
+	if (calcDist(object1, object2) < attack_range){
 		return true;
 	}
 	return false;
@@ -439,5 +528,5 @@ function is_in_range(object1, object2, attack_range=20){
 
 
 
-export { Enemy, Player };
+export { Enemy, Player, Zombie };
 

@@ -1,10 +1,11 @@
 import { canvas, player } from "../main.js";
-import { Enemy } from "./entities.js";
+import { Enemy, Zombie } from "./entities.js";
 import { dist } from "./utils.js";
 
 const level_details = {
     1 : {
-        enemy_count : 1
+        Enemy : 2,
+        Zombie : 1
     },
 }
 /* const level_details = {
@@ -28,11 +29,17 @@ class GameManager{
         this.current_level = new Level(1);
     }
     construct_enemies(){
-        let amt_of_enemies = level_details[this.current_level.id].enemy_count;
-        for (let i = 0; i < amt_of_enemies; i++) {
+        for (let enemy in level_details[this.current_level.id]){
+            for (let num = 0; num < level_details[this.current_level.id][enemy]; num++){
+                console.log("For",enemy,"number",num);
+                this.add_entity(enemy);
+            }
+        }
+        console.log("CREATED",this.enemies);
+/*         for (let i = 0; i < amt_of_enemies; i++) {
             this.enemies.push(this.add_entity(Enemy));
         }
-    }
+ */    }
     draw(context){
         this.current_level.draw(context);
         this.draw_enemies(context);
@@ -42,15 +49,19 @@ class GameManager{
             enemy.draw(context);
         }
     }
-    wander_enemies(){
+    update_enemies(){
         for (let enemy of this.enemies){
-            enemy.wander(this.current_level);
+            enemy.update(this.current_level);
         }
     }
     remove_entity(entity_instance){
         let index = this.enemies.indexOf(entity_instance);
+
         if (index > -1){
+            console.log(this.enemies);
             this.enemies.splice(index,1);
+            console.log("REMOVED", entity_instance);
+            console.log(this.enemies);
             return true;
         }
         else{
@@ -58,6 +69,7 @@ class GameManager{
         }
     }
     add_entity(entity_class){
+        entity_class = eval(entity_class);
         let entity = new entity_class(canvas.width, canvas.height);
         this.enemies.push(entity);
         return entity;
@@ -66,8 +78,6 @@ class GameManager{
         let entities = [];
         for (let entity of this.enemies){
             if (entity != object){
-                console.log("dist",dist(entity, object));
-                console.log(entity, player);
                 if (dist(entity, object) <= range){
                     entities.push(entity);
                 }
@@ -175,7 +185,6 @@ class Level{
 
             }
         }
-        console.log(dist);
         return dist;
     }
 
@@ -193,7 +202,7 @@ class Level{
         let [y,x] = player_tiles[0];
         if (dist(this.player_pos, player) > TILE_SIZE*2){
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
-            console.log([y,x], this.distance_to_player);
+            //console.log([y,x], this.distance_to_player);
             this.player_pos = {x : player.x, y : player.y};
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
@@ -395,6 +404,6 @@ class Level{
         }
         return counter;
     }
- }
+}
 
 export { GameManager, TILE_SIZE, COLLIDER_TILES };

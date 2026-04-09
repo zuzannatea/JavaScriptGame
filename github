@@ -1,11 +1,24 @@
+
 TODO
-add extra moves on Q
-add modifiable 3 stats 
+- make Dijstra work only in a certain range of player; otherwise random wandering 
+- add actual move logic for combat 
+- add level up logic + display it
+
+- ADD PLAYER SCORE!! and levels too!
+
+- add enemy types: 
+    - basic zombie (basically Y)
+    - swarm enemy 
+    (if in s)
+    - charger enemy
+    - splitter enemy 
+    - teleportation enemy 
 
 
-- changed keybinds mechanic 
-- added keybinds for extra moves 
-- added stat modifier variables in Entity
-- changed xChange/yChange into speed 
-- fixed enemy attack and minor bugs
-- added a timeout for combat 
+fixed:
+- changed variable names
+- initialised enemy classes
+- created basic zombie class 
+- partially fixed entity collision
+- change dijstra to ranged for non-zombie enemies
+- improved murder 

@@ -1,6 +1,19 @@
+credits 
+-------
 https://game-endeavor.itch.io/mystic-woods - mystic woods
 
+https://arex-v.itch.io/damp-dungeons - damp dungeons 
+
+https://route1rodent.itch.io/16x16-rpg-character-sprite-sheet 
+- scale w https://lospec.com/pixel-art-scaler/
++ simple keys also scale up
+
+
 https://cainos.itch.io/pixel-art-top-down-basic - top down basic
+
+---------
+resources
+---------
 
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax - Spread syntax
 
@@ -21,6 +34,15 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
 
 https://www.javascripttutorial.net/array/javascript-sort-an-array-of-objects/ - sorting an array w objects
 
+https://stackoverflow.com/questions/5613834/convert-string-to-variable-name-in-javascript - using eval()
+
+https://stackoverflow.com/questions/60750529/detecting-duration-of-key-press-using-javascript?utm_source=chatgpt.com - key press time detection
+
+https://www.xjavascript.com/blog/how-to-detect-if-multiple-keys-are-pressed-at-once-using-javascript/#solution-track-key-states-with-a-set - using a set for key press detection 
+
+
+notes to self
+---
 there'll probably be a need for some kind of stages system 
 ie: startGame, startingMenu, game, endScreen 
 
