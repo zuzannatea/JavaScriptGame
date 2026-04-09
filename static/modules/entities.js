@@ -343,9 +343,167 @@ class SwarmMind extends Enemy{
 
 }
 class Charger extends Enemy{
+	constructor(width, height) {
+		super(width, height);
+		this.speed = 1.5;
+		this.colour = "maroon";
+		this.charging = false;
+	}
+	draw(context){
+		context.fillStyle = "red";
+		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
+		context.fillStyle = this.colour;
+		context.fillRect(this.x, this.y, this.length, this.height);
+		if (this.charging){
+			context.beginPath();
+			context.moveTo(this.x+(this.length/2),this.y+(this.height/2));
+			context.lineTo(player.x+(player.length/2),player.y+(player.height/2));
+			context.strokeStyle = "orange";
+			context.lineWidth = 1;
+			context.stroke();
+		}
+	}
+
+	exists_straight_path(distance){
+		let current_tiles = this.get_current_tiles();
+		let [y_current, x_current] = current_tiles[0];
+		let counter = distance[y_current][x_current];
+		console.log("For",y_current,x_current, "distance is",distance[y_current][x_current]);
+		if (x_current > 0){
+			console.log("x_current != 0");
+			for (let x = x_current - 1; x >= 0; x--){
+				console.log("xcur", x_current, "x", x,"distance[y_current][x]", distance[y_current][x], "===",counter - 1 );
+				if (distance[y_current][x] === counter - 1){
+					counter = counter - 1; 
+					if (counter === 0){
+						return true;
+					}
+				}
+				else{
+					break;
+				}
+			}
+		}
+		counter = distance[y_current][x_current];
+		if (x_current < distance[0].length - 1){
+			for (let x = x_current + 1; x < distance[0].length; x++){
+				if (distance[y_current][x] === counter - 1){
+					counter = counter - 1;
+					if (counter === 0){
+						return true;
+					}
+				}
+				else{
+					break;
+				}
+			}
+		}
+		counter = distance[y_current][x_current];
+		if (y_current > 0){
+			for (let y = y_current - 1; y >= 0; y--){
+				if (distance[y][x_current] === counter - 1){
+					counter = counter - 1; 
+					if (counter === 0){
+						return true;
+					}
+				}
+				else{
+					break;
+				}
+			}
+		}
+		counter = distance[y_current][x_current];
+		if (y_current < distance.length - 1){
+			for (let y = y_current + 1; y < distance.length; y++){
+				if (distance[y][x_current] === counter - 1){
+					counter = counter - 1; 
+					if (counter === 0){
+						return true;
+					}
+				}
+				else{
+					break;
+				}
+			}
+		}
+		console.log("no path");
+		return false;
+	}
+	attack_charge(){
+		this.charging = true;
+		let player_distance = calcDist(this,player);
+		if (player_distance >= 32){
+			this.target = {x : player.x, y : player.y};
+			this.move_towards_target();
+		}
+
+		if (player_distance < 32){
+			this.colour = "black";
+			player.hurt(this.strength);
+		}
+		else{this.colour = "maroon";}
+
+	}
+	move_towards_target(){
+		if (this.target.length === 0 || is_in_range(this,this.target, 30)){
+			return;
+		}
+		let xMove;
+		let yMove;
+		let dx = this.target.x - this.x;
+		let dy = this.target.y - this.y;
+		let distance = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
+		if (distance <= 0.1){
+			return;
+		}
+		dx = dx/distance;
+		dy = dy/distance;
+		xMove = dx*this.speed*4;
+		yMove = dy*this.speed*4;
+		if (!(this.try_move(xMove,0) && this.try_move(0, yMove))){
+			this.snap_to_tile();
+		}
+	}
+	update(current_level, priority=0){
+		if (this.exists_straight_path(current_level.distance_to_player)){
+			this.colour = "brown";
+			this.attack_charge();
+		}
+		else if (calcDist(this,player) > 300){
+			this.charging = false;
+			this.wander();
+		}
+		else{
+			this.charging = false;
+			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
+				this.snap_to_tile();
+				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			} 
+		}
+	}
 
 }
 class Splitter extends Enemy{
+	constructor(width, height,lives=3) {
+		super(width, height);
+		this.colour = "lime";
+		if (lives != 3){
+			[this.lives, this.x, this.y, this.width, this.height] = lives;
+		}
+		else{
+			this.lives = lives;
+		}
+	}
+	die(){
+		console.log("Died", this);
+		if (this.lives > 1){
+			game_manager.add_entity(Splitter,this.lives-1,this.x+(randint(-1,1)*TILE_SIZE),this.y+(randint(-1,1)*TILE_SIZE), this.width*0.75, this.height*0.75);
+			game_manager.add_entity(Splitter,this.lives-1, this.x+(randint(-1,1)*TILE_SIZE), this.y+(randint(-1,1)*TILE_SIZE), this.width*0.75, this.height*0.75);
+		}
+		game_manager.remove_entity(this);
+	}
+
 
 }
 class Teleporter extends Enemy{
@@ -528,5 +686,5 @@ function is_in_range(object1, object2, attack_range=20){
 
 
 
-export { Enemy, Player, Zombie };
+export { Enemy, Player, Zombie, Charger, Splitter };
 

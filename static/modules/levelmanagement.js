@@ -1,11 +1,10 @@
 import { canvas, player } from "../main.js";
-import { Enemy, Zombie } from "./entities.js";
+import { Enemy, Zombie, Charger, Splitter } from "./entities.js";
 import { dist } from "./utils.js";
 
 const level_details = {
     1 : {
-        Enemy : 2,
-        Zombie : 1
+        Charger : 1
     },
 }
 /* const level_details = {
@@ -68,9 +67,15 @@ class GameManager{
             return false;
         }
     }
-    add_entity(entity_class){
+    add_entity(entity_class, ...args){
         entity_class = eval(entity_class);
-        let entity = new entity_class(canvas.width, canvas.height);
+        let entity;
+        if (args.length === 0){
+            entity = new entity_class(canvas.width, canvas.height);
+        }
+        else{
+            entity = new entity_class(canvas.width, canvas.height, args);
+        }
         this.enemies.push(entity);
         return entity;
     }

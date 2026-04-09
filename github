@@ -16,9 +16,3 @@ TODO
 
 
 fixed:
-- changed variable names
-- initialised enemy classes
-- created basic zombie class 
-- partially fixed entity collision
-- change dijstra to ranged for non-zombie enemies
-- improved murder 
