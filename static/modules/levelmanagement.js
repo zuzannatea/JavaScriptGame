@@ -1,5 +1,5 @@
 import { canvas, player } from "../main.js";
-import { Enemy, Zombie, Charger, Splitter } from "./entities.js";
+import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter } from "./entities.js";
 import { dist } from "./utils.js";
 
 const level_details = {

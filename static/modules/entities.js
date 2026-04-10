@@ -17,7 +17,7 @@ class Entity{
 		this.strength = 10;
 		this.max_health = 50;
 
-		this.curr_health = 50;
+		this.curr_health = this.max_health;
 
 		this.last_attack = Date.now(); 
 	}
@@ -182,12 +182,15 @@ class Enemy extends Entity{
 			this.attack_charge();
 		}
 		else{
-			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
-			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
-				this.snap_to_tile();
-				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
-			} 
+			this.hunt(current_level, priority);
 		}
+	}
+	hunt(current_level, priority){
+		let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+		while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
+			this.snap_to_tile();
+			[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+		} 
 	}
 	wander(){
 		if (this.target.length === 0 || is_in_range(this,this.target, 30)){
@@ -340,7 +343,68 @@ class Zombie extends Enemy{
 
 }
 
-class SwarmMind extends Enemy{
+class Swarmer extends Enemy{
+	constructor(width, height) {
+		super(width, height);
+		this.speed = 3;
+		this.max_health = 25;
+		this.colour = "liliac";
+		this.friends = [];
+
+	}
+	count_friends(){
+		let counter = 0;
+		for (let enemy of game_manager.enemies){
+			if (enemy instanceof Swarmer && enemy != this){
+				counter = counter + 1;
+			}
+		}
+		return this.count_friends;
+	}
+	find_a_friend(){
+		best_friend = {entity : undefined, distance : 0}
+		for (let enemy of game_manager.enemies){
+			if (enemy instanceof Swarmer && enemy != this && (!enemy in this.friends)){
+				let distance = calcDist(this,entity);
+				if (distance < best_friend.distance){
+					best_friend = {entity : enemy, distance : distance};
+				}
+			}
+		}
+		return best_friend;
+
+	}
+	update_current_friends(){
+		let entities = game_manager.entities_in_range(this);
+		let current_friends = [];
+		for (let entity of entities){
+			if (entity instanceof Swarmer && enemy != this){
+				current_friends.push(entity);
+			}
+		}
+		if (current_friends.length != this.friends.length){
+			this.friends = current_friends;
+		}
+	}
+
+	update(current_level, priority=0){
+		this.update_current_friends();
+		if (this.count_friends < 2){
+			this.find_a_friend();
+		}
+		else if (this.count_friends < 5){
+			this.wander()
+		}
+		else{
+			this.hunt(current_level, priority);
+		}
+		if (calcDist(this,player) < 50){
+			this.colour = "orange";
+			this.attack_charge();
+		}
+	}
+
+
 
 }
 class Charger extends Enemy{
@@ -616,17 +680,17 @@ class Player extends Entity{
 
 		if (this.cooldown <= 0){
 			if (this.pressedKeys.has("specialMoveModifier")){
-				this.ability_manager.roll();
+				this.ability_manager.perform("roll");
 				this.cooldown = 25;
 			
 			}
 			else if (this.longQTap){
-				this.ability_manager.roll();
+				this.ability_manager.perform("roll");
 				this.longQTap = false;
 				this.cooldown = 25;
 			}
 			else if (this.shortQTap){
-				this.ability_manager.roll();
+				this.ability_manager.perform("roll");
 				this.shortQTap = false;
 				this.cooldown = 25;
 			}
@@ -673,7 +737,7 @@ class AbilityManager{
 		this.all_abilities = [Smash, Roll, Charge];
 		this.current_abilities = {
 			smash : 0, 
-			roll : new Roll(this.player), 
+			roll : 0, 
 			charge : 0
 		};
 	}
@@ -686,19 +750,26 @@ class AbilityManager{
 		}
 		return false;
 	}
-	roll(){
-		if (this.current_abilities["roll"] === 0){
-			return;
+	perform(name){
+		if (this.current_abilities[name]){
+			if (this.current_abilities[name] === 0){
+				return;
+			}
+			else{
+				this.current_abilities[name].use();
+			}
 		}
-		this.current_abilities["roll"].use();
 	}
-	smash(){
-		console.log("smash");
+	level_up(name){
+		if (this.current_abilities[name]){
+			if (this.current_abilities[name] === 0){
+				this.gain_ability(name);
+			}
+			else{
+				this.current_abilities[name].level_up();
+			}
+		}
 	}
-	charge(){
-		console.log("charge");
-	}
-
 }
 
 class Ability{
@@ -712,7 +783,11 @@ class Ability{
 	use(){
 		this[this.levels[this.level]]();
 	}
-	upgrade(){}
+	level_up(){
+		if (this.level < this.max_level){
+			this.level = this.level + 1;
+		}
+	}
 }
 
 class Smash extends Ability{
@@ -776,7 +851,7 @@ class Charge extends Ability{
 	faster_charge(){
 		this.player.speed = this.player.speed*2;
 		this.player.speeding_timestamp = Date.now() + 500;
-		this.player.attack()
+		this.player.attack();
 	}
 	explosion_charge(){
 		this.player.speed = this.player.speed*2.5;
@@ -809,5 +884,5 @@ function is_in_range(object1, object2, attack_range=20){
 
 
 
-export { Enemy, Player, Zombie, Charger, Splitter };
+export { Enemy, Player, Zombie, Charger, Splitter, Swarmer, Teleporter };
 
