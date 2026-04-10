@@ -369,11 +369,8 @@ class Charger extends Enemy{
 		let current_tiles = this.get_current_tiles();
 		let [y_current, x_current] = current_tiles[0];
 		let counter = distance[y_current][x_current];
-		console.log("For",y_current,x_current, "distance is",distance[y_current][x_current]);
 		if (x_current > 0){
-			console.log("x_current != 0");
 			for (let x = x_current - 1; x >= 0; x--){
-				console.log("xcur", x_current, "x", x,"distance[y_current][x]", distance[y_current][x], "===",counter - 1 );
 				if (distance[y_current][x] === counter - 1){
 					counter = counter - 1; 
 					if (counter === 0){
@@ -427,7 +424,6 @@ class Charger extends Enemy{
 				}
 			}
 		}
-		console.log("no path");
 		return false;
 	}
 	attack_charge(){
@@ -497,7 +493,6 @@ class Splitter extends Enemy{
 		}
 	}
 	die(){
-		console.log("Died", this);
 		if (this.lives > 1){
 			game_manager.add_entity(Splitter,this.lives-1,this.x+(randint(-1,1)*TILE_SIZE),this.y+(randint(-1,1)*TILE_SIZE), this.width*0.75, this.height*0.75);
 			game_manager.add_entity(Splitter,this.lives-1, this.x+(randint(-1,1)*TILE_SIZE), this.y+(randint(-1,1)*TILE_SIZE), this.width*0.75, this.height*0.75);
@@ -514,7 +509,7 @@ class Teleporter extends Enemy{
 class Player extends Entity{
 	constructor(width, height) {
 		super();
-		this.ability_manager = new AbilityManager();
+		this.ability_manager = new AbilityManager(this);
 		this.canvas = [width,height];
 		this.x = Math.floor(canvas.width/2);
 		this.y = Math.floor(canvas.height/2);
@@ -536,10 +531,60 @@ class Player extends Entity{
 
 		this.running = true;
 
+		this.invulnerability = false;
+		this.invulnerability_timestamp;
+		this.speeding_timestamp;
+
 		this.colour = "cyan";
 	
 	}
+	take_damage(amount=10){
+		if (this.invulnerability){return;}
+
+		if (Date.now() - this.last_attack < 500 || this.curr_health <= 0){
+			return;
+		}
+		
+		if (this.curr_health - amount <= 0){
+			this.curr_health = 0;
+			this.die();
+			return true;
+		}
+		else{
+			this.curr_health = this.curr_health - amount;
+			return false;
+		}
+	}
+
+	check_rolling(){
+		if (!this.invulnerability_timestamp){return;}
+		let distance = this.invulnerability_timestamp - Date.now();
+		if (distance < 0){
+			this.invulnerability_timestamp = undefined;
+			this.invulnerability = false; 
+			return true;
+		}
+		return false;
+	}
+	check_charging(){
+		if (!this.speeding_timestamp){return;}
+		let distance = this.speeding_timestamp - Date.now();
+		if (distance < 0){
+			this.speeding_timestamp = undefined;
+			this.speed = Math.ceil(this.speed/2);
+			return true;
+		}
+		return false;
+
+	}
+	check_abilities(){
+		this.check_rolling();
+		this.check_charging();
+	}
+
+
 	update(){
+		this.check_abilities();
 		this.pauseCooldown = Math.max(this.pauseCooldown - 1,0);
 		if (this.pauseCooldown <= 0){
 			if (this.pressedKeys.has("running")){
@@ -566,26 +611,17 @@ class Player extends Entity{
 			this.try_move(0,this.speed);
 		}
 		if (this.pressedKeys.has("isAttacking")){
-			console.log("Is");
-			let entities = game_manager.entities_in_range(this);
-			console.log(entities);
-			if (entities.length != 0){
-				this.colour = "yellow";
-				let entity = entities.pop();
-				this.attack(entity);
-				//console.log(entity.health);
-			}
-			else{this.colour = "cyan";}
+			this.attack();
 		}
 
 		if (this.cooldown <= 0){
 			if (this.pressedKeys.has("specialMoveModifier")){
-				this.ability_manager.charge();
+				this.ability_manager.roll();
 				this.cooldown = 25;
 			
 			}
 			else if (this.longQTap){
-				this.ability_manager.smash();
+				this.ability_manager.roll();
 				this.longQTap = false;
 				this.cooldown = 25;
 			}
@@ -596,12 +632,27 @@ class Player extends Entity{
 			}
 		}
 	}
-	attack(target){
+	ranged_attack(range=45){
+		let entities = game_manager.entities_in_range(this,range);
+		for (let entity of entities){
+			this.attack(entity);
+		}
+	}
+	attack(){
+		let entities = game_manager.entities_in_range(this);
+		if (entities.length != 0){
+			let entity = entities.pop();
+			this.attack_entity(entity);
+			return true;
+		}
+		return false;
+	}
+	attack_entity(target){
 		if (target.take_damage(this.strength)){
 			this.score += target.points;
 		}
-
 	}
+
 	draw(context){
 		context.fillStyle = this.colour;
 		context.fillRect(this.x, this.y, this.length, this.height);
@@ -617,26 +668,29 @@ class Player extends Entity{
 }
 
 class AbilityManager{
-	constructor(){
+	constructor(player){
+		this.player = player;
 		this.all_abilities = [Smash, Roll, Charge];
-		this.current_abilities_levels = {
+		this.current_abilities = {
 			smash : 0, 
-			roll : 0, 
+			roll : new Roll(this.player), 
 			charge : 0
 		};
-		this.current_abilities = {};
 	}
 	gain_ability(name){
-		if (this.current_abilities_levels[name]){
-			if (this.current_abilities_levels[name] === 0){
-				this.current_abilities_levels[name] = new name();
+		if (this.current_abilities[name]){
+			if (this.current_abilities[name] === 0){
+				this.current_abilities[name] = new name(this.player);
 				return true;
 			}
 		}
 		return false;
 	}
 	roll(){
-		console.log("roll");
+		if (this.current_abilities["roll"] === 0){
+			return;
+		}
+		this.current_abilities["roll"].use();
 	}
 	smash(){
 		console.log("smash");
@@ -648,30 +702,88 @@ class AbilityManager{
 }
 
 class Ability{
-	constructor(){
+	constructor(player){
+		this.player = player;
 		this.damage_per_use; 
 		this.level = 1;
 		this.max_level = 3;
+		this.levels = {}
 	}
-	use(){}
+	use(){
+		this[this.levels[this.level]]();
+	}
 	upgrade(){}
 }
 
 class Smash extends Ability{
-	use(){
-
+	constructor(player){
+		super(player);
+		this.levels = {
+			1 : "smash", 
+			2 : "double_smash",
+			3 : "mega_smash"
+		}
 	}
+	smash(){
+		this.player.ranged_attack();
+	}
+	double_smash(){
+		this.player.ranged_attack(60);
+	}
+	mega_smash(){
+		this.player.ranged_attack(75);
+		this.player.invulnerability_timestamp = Date.now() + 250;
+	}
+
 }
 class Roll extends Ability{
-	use(){
-		
-
+	constructor(player){
+		super(player);
+		this.levels = {
+			1 : "roll", 
+			2 : "prolonged_roll",
+			3 : "damage_roll"
+		}
+	}
+	roll(){
+		this.player.invulnerability = true;
+		this.player.invulnerability_timestamp = Date.now() + 250;
+	}
+	prolonged_roll(){
+		this.player.invulnerability = true;
+		this.player.invulnerability_timestamp = Date.now() + 500;
+	}
+	damage_roll(){
+		this.player.invulnerability = true;
+		this.player.invulnerability_timestamp = Date.now() + 750;
+		this.player.ranged_attack();
 	}
 }
 class Charge extends Ability{
-	use(){
-
+	constructor(player){
+		super(player);
+		this.levels = {
+			1 : "charge", 
+			2 : "faster_charge",
+			3 : "explosion_charge"
+		}
 	}
+	charge(){
+		this.player.speed = this.player.speed*1.5;
+		this.player.speeding_timestamp = Date.now() + 250;
+		this.player.attack();
+	}
+	faster_charge(){
+		this.player.speed = this.player.speed*2;
+		this.player.speeding_timestamp = Date.now() + 500;
+		this.player.attack()
+	}
+	explosion_charge(){
+		this.player.speed = this.player.speed*2.5;
+		this.player.speeding_timestamp = Date.now() + 750;
+		this.player.ranged_attack(60);
+	}
+
 }
 
 
