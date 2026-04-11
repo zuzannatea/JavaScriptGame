@@ -567,6 +567,27 @@ class Splitter extends Enemy{
 
 }
 class Teleporter extends Enemy{
+	constructor(width, height) {
+		super(width, height);
+		this.colour = "pink";
+		this.buffering_timestamp;
+	}
+	move_instantly(x,y){}
+	set_waiting_time(timestamp){}
+	update(current_level, priority=0){
+		if (calcDist(this,player) > 300){
+			this.colour = "purple";
+			this.wander();
+		}
+		else if(calcDist(this,player) > 50){
+			this.teleport(current_level);
+		}
+		else if (calcDist(this,player) < 50){
+			this.colour = "orange";
+			this.attack_charge();
+		}
+	}
+
 
 }
 

@@ -1,13 +1,10 @@
 
 TODO
-- add actual move logic for combat 
 - add enemy types: 
-    - swarm enemy 
-    (if in s)
     - teleportation enemy 
 - make levels traversible 
     - unblock door after reaching a certain score
-
+- improve Swarmer so it aims for an offset of player
+- test and debug Swarmer
 
 fixed:
-- added level-ups for player abilities 

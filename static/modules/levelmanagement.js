@@ -26,6 +26,7 @@ class GameManager{
     constructor(){
         this.enemies = [];
         this.current_level = new Level(1);
+        this.final_level = 5;
     }
     construct_enemies(){
         for (let enemy in level_details[this.current_level.id]){
