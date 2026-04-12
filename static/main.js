@@ -23,8 +23,7 @@ function init(){
     game_manager = new GameManager();
     player = new Player();
 
-    game_manager.current_level.generate_level();
-    game_manager.construct_game();
+    game_manager.construct_game(context);
 
     draw();
     window.addEventListener("keydown",activate,false);

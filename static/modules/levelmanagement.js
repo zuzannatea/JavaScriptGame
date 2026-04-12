@@ -1,12 +1,26 @@
 import { canvas, player } from "../main.js";
 import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
-import { dist, remove_item, is_colliding } from "./utils.js";
+import { dist, remove_item, is_colliding, choose } from "./utils.js";
 
 const level_details = {
     1 : {
         enemies : {Teleporter : 1},
-        stat_boosts : 2
+        stat_boosts : 2,
+        score_needed : 0
     },
+    2 : {
+        enemies : {Zombie : 2},
+        stat_boosts : 3,
+        score_needed : 10
+    },
+    3 : {
+        enemies : {Charger : 2,
+            Zombie : 1
+        },
+        stat_boosts : 1,
+        score_needed : 10
+    }
+
 }
 const TileType = {
     wall : "red",
@@ -21,10 +35,47 @@ class GameManager{
         this.current_level = new Level(1);
         this.final_level = 5;
         this.stat_boosts = [];
+        this.exit_tiles;
     }
-    construct_game(){
+    check_progression(){
+        if (!this.exit_tiles && player.score >= level_details[this.current_level.id].score_needed){
+            this.exit_tiles = this.current_level.spawn_exit();
+                    }
+        if (this.exit_tiles){
+            if (this.check_exiting()){
+                this.progress_to_next_level();
+                console.log("Progressed");
+                return;
+            }
+        }
+        
+    }
+    check_exiting(){
+        let player_tiles = player.get_current_tiles();
+        for (let tile of player_tiles){
+            if ((tile[1] === this.exit_tiles.x1 || tile[1] === this.exit_tiles.x2) && tile[0] === this.exit_tiles.y){
+                return true;
+            }
+        }
+        return false;
+    }
+    progress_to_next_level(){
+        this.enemies = [];
+        this.stat_boosts = [];
+        this.exit_tiles = undefined;
+        player.x = Math.floor(canvas.width/2);
+        player.y = Math.floor(canvas.height/2);
+        player.curr_health = player.max_health;
+        let new_level_id = this.current_level.id + 1;
+        this.current_level = new Level(new_level_id);
+        this.construct_game();
+        return;
+    }
+    construct_game(context){
+        this.current_level.generate_level();
         this.construct_enemies();
         this.construct_stat_boosts();
+        return;
     }
     construct_enemies(){
         for (let enemy in level_details[this.current_level.id].enemies){
@@ -32,10 +83,9 @@ class GameManager{
                 this.add_entity(enemy);
             }
         }
-/*         for (let i = 0; i < amt_of_enemies; i++) {
-            this.enemies.push(this.add_entity(Enemy));
-        }
- */  }
+        return;
+        
+    }
     construct_stat_boosts(){
         let num_of_boosts = level_details[this.current_level.id].stat_boosts;
         let curr_boosts = this.stat_boosts.length;
@@ -50,6 +100,7 @@ class GameManager{
         this.draw_stat_boosts(context);
     }
     update(){
+        this.check_progression();
         this.update_enemies();
         this.update_stat_boosts();
     }
@@ -124,11 +175,34 @@ let MAP_SIZE_MODIFIER = 1.5;
 class Level{
     constructor(id){
         this.id = id;
+        console.log(id);
         this.map = [];
         //for pathfindi g
         this.player_pos = {x:0, y:0};
         this.distance_to_player = [];
         this.warning_tiles = [];
+        this.exit;
+    }
+    spawn_exit(){
+        if (this.exit){return;}
+        let possible_choice_in_tiles = [];
+        let distance = this.distance_to_player;
+		for (let row = 0; row < distance.length - 1; row++){
+			for (let col = 0; col < distance[0].length; col++){
+				if ((distance[row][col] === 4) && distance[row+1][col] < Number.MAX_SAFE_INTEGER){
+					possible_choice_in_tiles.push({
+						x1 : row, 
+						y : col,
+						x2 : row+1,
+                        value : distance[row][col]
+					})
+				}
+			}
+		}
+        console.log(possible_choice_in_tiles);
+		let chosen = choose(possible_choice_in_tiles);
+        this.exit = {x1 : chosen.x1, x2 : chosen.x2, y : chosen.y}
+        return this.exit;
     }
     get_adjacent_tiles_with_weight(row,col){
         let adj_tiles = [];
@@ -262,6 +336,12 @@ class Level{
                 for (let warning of this.warning_tiles){
                     if (r === warning.x && c === warning.y){
                         context.fillStyle = "brown";
+                    }
+                }
+                if (this.exit){
+                    if ((c === this.exit.x1 || c === this.exit.x2) && r === this.exit.y){
+                        context.fillStyle = "pink";
+                        //console.log(this.get_tile(r,c));
                     }
                 }
                 context.fillRect((r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);

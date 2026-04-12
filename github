@@ -7,8 +7,8 @@ TODO
 - fix boost spawning so its not in the same place of the tile but center
 
 fixed:
-- Added StatBoost class
-- Restructured GameManager class
-- Restructured level_details const
-- Added claim_stat_boost to Player class 
-- Made stat boosts respawnable
+- Added level progression 
+- Modified level_details with more levels added
+- Added spawn_exit() in Level class
+- Restructured GameManager class 
+ 
