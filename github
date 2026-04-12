@@ -1,11 +1,14 @@
 
 TODO
-- add enemy types: 
-    - teleportation enemy 
 - make levels traversible 
     - unblock door after reaching a certain score
 - improve Swarmer so it aims for an offset of player
-- test and debug Swarmer
+- add slight player offset for Swarmer? and/or improve entity collision 
+- fix boost spawning so its not in the same place of the tile but center
 
 fixed:
-- add slight player offset for Swarmer? and/or improve entity collision 
+- Added StatBoost class
+- Restructured GameManager class
+- Restructured level_details const
+- Added claim_stat_boost to Player class 
+- Made stat boosts respawnable

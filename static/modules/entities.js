@@ -1,6 +1,6 @@
 import { canvas, game_manager, player } from "../main.js";
 import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
-import {dist as calcDist,randint, choose} from "./utils.js";
+import {dist as calcDist,randint, choose, is_colliding} from "./utils.js";
 
 
 let all_entities = [];
@@ -22,9 +22,10 @@ class Entity{
 		this.last_attack = Date.now(); 
 	}
 	take_damage(amount=10){
-		if (Date.now() - this.last_attack < 500 || this.curr_health <= 0){
+		if (Date.now() - this.last_attack < 750 || this.curr_health <= 0){
 			return;
 		}
+		this.last_attack = Date.now();
 		if (this.curr_health - amount <= 0){
 			this.curr_health = 0;
 			this.die();
@@ -67,8 +68,6 @@ class Entity{
 		if (!moved){
 			return false;
 		}
-		
-
 		let entity_colliding = this.entity_colliding();
 		if (entity_colliding){
 			this.move_by(-xMove,-yMove);
@@ -76,6 +75,7 @@ class Entity{
 			this.move_by(distance[0],distance[1]);
 			return false; 
 		}
+
 		return true;
 	}
 	move_by(xMove,yMove){
@@ -256,6 +256,7 @@ class Enemy extends Entity{
 	}
 
 	attack_charge(){
+
 		if (calcDist(this,player) >= 25){
 			let xMove; let yMove;
 			let dx = player.x - this.x;
@@ -706,10 +707,10 @@ class Player extends Entity{
 	take_damage(amount=10){
 		if (this.invulnerability){return;}
 
-		if (Date.now() - this.last_attack < 500 || this.curr_health <= 0){
+		if (Date.now() - this.last_attack < 750 || this.curr_health <= 0){
 			return;
 		}
-		
+		this.last_attack = Date.now();
 		if (this.curr_health - amount <= 0){
 			this.curr_health = 0;
 			this.die();
@@ -760,7 +761,6 @@ class Player extends Entity{
 		if (!this.running){
 			return;
 		}
-
 		this.cooldown = Math.max(this.cooldown - 1,0);
 
 		if (this.pressedKeys.has("moveRight")){
@@ -826,7 +826,19 @@ class Player extends Entity{
 		context.font = "50px Arial";
 		context.fillStyle = "black";
 		context.fillText("Score: "+this.score,10,80);
+		context.font = "20px Arial";
+		context.fillText("Curr Health: "+this.curr_health, 10, 130);
+		context.fillText("Max Health: "+this.max_health, 10, 130+20);
+		context.fillText("Speed: "+this.speed, 10, 130+40);
+		context.fillText("Strength: "+this.strength, 10, 130+60);
 
+
+	}
+	claim_boost(boost){
+		let garbage_can = boost.get_claimed();
+		let [amount, type] = [garbage_can.amount, garbage_can.type];
+		this[type] = this[type] + amount;
+		console.log("Claimed boost of",type,"with value",amount,"which amounts to",this[type]);
 	}
 
 
@@ -962,18 +974,57 @@ class Charge extends Ability{
 
 }
 
-
-function is_colliding(object1, object2){
-	if (object1.x + object1.length < object2.x + 5 ||
-		object2.x + object2.length < object1.x + 5 ||
-		object1.y > object2.y + object2.height ||
-		object2.y > object1.y + object1.height){
-			return false;
+class StatBoost{
+	constructor(){
+		this.available_boosts = [
+			{type : "speed", colour: "yellow"}, 
+			{type : "strength", colour : "brown"}, 
+			{type : "curr_health", colour : "pink"}, 
+			{type : "max_health", colour : "orange"}];
+		this.boost = choose(this.available_boosts);
+		this.amount = randint(1,5);
+		this.x; this.y;
+		//[this.x,this.y] = this.find_a_spawn_place();
+		this.height = 15;
+		this.length = 15;
+	}
+	find_a_spawn_place(){
+		let distance = game_manager.current_level.distance_to_player;
+		let possible_choice_in_tiles = [];
+		console.log(distance);
+		for (let row = 2; row < distance.length-2; row++){
+			for (let col = 2; col < distance[0].length-2; col++){
+				let curr_dist = distance[row][col];
+				if (curr_dist > 5 && curr_dist < Number.MAX_SAFE_INTEGER){
+					possible_choice_in_tiles.push({
+						x : row, 
+						y : col,
+						value : curr_dist
+					})
+				}
+			}
 		}
-	else{
-		return true;
+		let chosen = choose(possible_choice_in_tiles);
+		//let tile_x = (TILE_SIZE/2 + chosen.x) - (this.length/TILE_SIZE)/2;
+		let pixel_x = chosen.x * TILE_SIZE;
+		//let tile_y = (TILE_SIZE/2 + chosen.y) - (this.height/TILE_SIZE)/2;
+		let pixel_y = chosen.y * TILE_SIZE;
+		return [pixel_x, pixel_y]
+
+
+	}
+	draw(context){
+		if (!this.x){
+			[this.x,this.y] = this.find_a_spawn_place();
+		}
+		context.fillStyle = this.boost.colour;
+		context.fillRect(this.x, this.y, this.length,this.height);
+	}
+	get_claimed(){
+		return {amount : this.amount, type : this.boost.type};
 	}
 }
+
 
 function is_in_range(object1, object2, attack_range=20){
 	if (calcDist(object1, object2) < attack_range){
@@ -985,5 +1036,5 @@ function is_in_range(object1, object2, attack_range=20){
 
 
 
-export { Enemy, Player, Zombie, Charger, Splitter, Swarmer, Teleporter };
+export { Enemy, Player, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost };
 

@@ -24,7 +24,7 @@ function init(){
     player = new Player();
 
     game_manager.current_level.generate_level();
-    game_manager.construct_enemies();
+    game_manager.construct_game();
 
     draw();
     window.addEventListener("keydown",activate,false);
@@ -46,7 +46,7 @@ function draw(){
         context.clearRect(0, 0, canvas.width, canvas.height);
         
         game_manager.draw(context);
-        game_manager.update_enemies();
+        game_manager.update();
 
         player.draw(context);
     }

@@ -1,10 +1,11 @@
 import { canvas, player } from "../main.js";
-import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter } from "./entities.js";
-import { dist, remove_item } from "./utils.js";
+import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
+import { dist, remove_item, is_colliding } from "./utils.js";
 
 const level_details = {
     1 : {
-        Teleporter : 1
+        enemies : {Teleporter : 1},
+        stat_boosts : 2
     },
 }
 const TileType = {
@@ -19,20 +20,59 @@ class GameManager{
         this.enemies = [];
         this.current_level = new Level(1);
         this.final_level = 5;
+        this.stat_boosts = [];
+    }
+    construct_game(){
+        this.construct_enemies();
+        this.construct_stat_boosts();
     }
     construct_enemies(){
-        for (let enemy in level_details[this.current_level.id]){
-            for (let num = 0; num < level_details[this.current_level.id][enemy]; num++){
+        for (let enemy in level_details[this.current_level.id].enemies){
+            for (let num = 0; num < level_details[this.current_level.id].enemies[enemy]; num++){
                 this.add_entity(enemy);
             }
         }
 /*         for (let i = 0; i < amt_of_enemies; i++) {
             this.enemies.push(this.add_entity(Enemy));
         }
- */    }
+ */  }
+    construct_stat_boosts(){
+        let num_of_boosts = level_details[this.current_level.id].stat_boosts;
+        let curr_boosts = this.stat_boosts.length;
+        console.log(curr_boosts,num_of_boosts);
+        for (let i = curr_boosts; i < num_of_boosts; i++){
+            this.stat_boosts.push(new StatBoost());
+        }
+    }
     draw(context){
         this.current_level.draw(context);
         this.draw_enemies(context);
+        this.draw_stat_boosts(context);
+    }
+    update(){
+        this.update_enemies();
+        this.update_stat_boosts();
+    }
+    update_stat_boosts(){
+        let to_be_removed = []
+        for (let boost of this.stat_boosts){
+            if (is_colliding(boost, player)){
+                player.claim_boost(boost);
+                to_be_removed.push(boost);
+            }
+        }
+        for (let item of to_be_removed){
+            this.stat_boosts = remove_item(item,this.stat_boosts);
+        }
+        if (this.stat_boosts.length < level_details[this.current_level.id].stat_boosts){
+            this.construct_stat_boosts();
+        }
+
+    }
+    draw_stat_boosts(context){
+        for (let boost of this.stat_boosts){
+            boost.draw(context);
+        }
     }
     draw_enemies(context){
         for (let enemy of this.enemies){

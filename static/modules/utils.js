@@ -26,5 +26,16 @@ function choose(choices){
 	let index = Math.floor(Math.random() * choices.length);
 	return choices[index];
 }
+function is_colliding(object1, object2){
+	if (object1.x + object1.length < object2.x + 5 ||
+		object2.x + object2.length < object1.x + 5 ||
+		object1.y > object2.y + object2.height ||
+		object2.y > object1.y + object1.height){
+			return false;
+		}
+	else{
+		return true;
+	}
+}
 
-export {dist,randint,wait,choose, remove_item}
+export {dist,randint,wait,choose, remove_item, is_colliding}
