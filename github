@@ -8,3 +8,4 @@ TODO
 - test and debug Swarmer
 
 fixed:
+- add slight player offset for Swarmer? and/or improve entity collision 

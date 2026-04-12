@@ -22,5 +22,9 @@ function wait(ms){
 		end = new Date().getTime();
 	}
 }
+function choose(choices){
+	let index = Math.floor(Math.random() * choices.length);
+	return choices[index];
+}
 
-export {dist,randint,wait}
+export {dist,randint,wait,choose, remove_item}

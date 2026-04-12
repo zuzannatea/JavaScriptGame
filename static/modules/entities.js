@@ -1,6 +1,6 @@
 import { canvas, game_manager, player } from "../main.js";
 import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
-import {dist as calcDist,randint} from "./utils.js";
+import {dist as calcDist,randint, choose} from "./utils.js";
 
 
 let all_entities = [];
@@ -36,7 +36,6 @@ class Entity{
 		}
 	}
 	die(){
-		console.log("Died", this);
 		game_manager.remove_entity(this);
 	}
 	try_move(xMove,yMove){
@@ -272,7 +271,8 @@ class Enemy extends Entity{
 		if (calcDist(this,player) < 25){
 			this.colour = "black";
 			player.take_damage(this.strength);
-		}else{this.colour = "orange";}
+		}
+		else{this.colour = "orange";}
 
 	}
 	snap_to_tile(){
@@ -287,18 +287,6 @@ class Enemy extends Entity{
 		context.fillStyle = this.colour;
 		context.fillRect(this.x, this.y, this.length, this.height);
 	}
-	check_proximity(){
-		if (dist(this,player) < 100){
-			this.target = {x : player.x, y : player.y};
-			console.log("Detected");
-		}
-		if (is_in_range(this,player)){
-			player.health = player.health - 10;
-			console.log("Attacked");
-		}
-		
-	}
-
 
 	tile_colliding(){
 		let all_tiles = this.get_current_tiles();
@@ -328,7 +316,6 @@ class Zombie extends Enemy{
 	}
 	update(current_level, priority=0){
 		if (calcDist(this,player) < 50){
-			console.log("now");
 			this.colour = "orange";
 			this.attack_charge();
 		}
@@ -400,7 +387,6 @@ class Swarmer extends Enemy{
 			this.target = this.find_a_friend();
 		}
 	}
-
 	update_current_friends(){
 		let entities = game_manager.entities_in_range(this);
 		let current_friends = [];
@@ -413,7 +399,6 @@ class Swarmer extends Enemy{
 			this.friends = current_friends;
 		}
 	}
-
 	update(current_level, priority=0){
 		this.update_current_friends();
 		//spped modifier 
@@ -605,17 +590,77 @@ class Teleporter extends Enemy{
 	constructor(width, height) {
 		super(width, height);
 		this.colour = "pink";
+		this.speed = 2;
 		this.buffering_timestamp;
+		this.teleporting_timestamp = Date.now() + 2500;
 	}
-	move_instantly(x,y){}
-	set_waiting_time(timestamp){}
+	move_instantly(x,y){
+		this.x = x;
+		this.y = y;
+		this.snap_to_tile();
+	}
+	check_buffering_time(){
+		if (!this.buffering_timestamp){return false;}
+		if (this.buffering_timestamp - Date.now() < 0){
+			this.buffering_timestamp = undefined;
+			this.colour = "black";
+			return false;
+		}
+		return true;
+	}
+
+	teleport(current_level){
+		let distance = current_level.distance_to_player;
+		let possible_choice_in_tiles = []; 
+		for (let row = 0; row < distance.length; row++){
+			for (let col = 0; col < distance[0].length; col++){
+				let curr_dist = distance[row][col];
+				if (curr_dist === 4 || curr_dist === 5){
+					possible_choice_in_tiles.push({
+						x : row, 
+						y : col,
+						value : curr_dist
+					})
+				}
+			}
+		}
+		let chosen = choose(possible_choice_in_tiles);
+		current_level.set_warning_tiles(chosen.x, chosen.y, Date.now() + 2000);
+		this.buffering_timestamp = Date.now()+2000;
+		this.teleporting_timestamp = Date.now() + 15000;
+		this.colour = "white";//placeholder!!
+		let [chosen_x, chosen_y] = [chosen.x * TILE_SIZE, chosen.y * TILE_SIZE];
+		this.move_instantly(chosen_x, chosen_y);
+		return;
+	}
+	can_teleport(){
+		if (!this.teleporting_timestamp){return true;}
+		if (this.teleporting_timestamp - Date.now() < 0){
+			return true;
+		}
+		return false;
+	}
+	draw(context){
+		if (this.check_buffering_time()){return;}
+		context.fillStyle = "red";
+		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
+		context.fillStyle = this.colour;
+		context.fillRect(this.x, this.y, this.length, this.height);
+	}
+
 	update(current_level, priority=0){
+		if (this.check_buffering_time()){return;}
+
 		if (calcDist(this,player) > 300){
-			this.colour = "purple";
 			this.wander();
 		}
-		else if(calcDist(this,player) > 50){
-			this.teleport(current_level);
+		else if(calcDist(this,player) > 150){
+			if (this.can_teleport()){
+				this.teleport(current_level);
+			}
+			else{
+				this.hunt(current_level, priority);
+			}
 		}
 		else if (calcDist(this,player) < 50){
 			this.colour = "orange";

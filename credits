@@ -40,6 +40,7 @@ https://stackoverflow.com/questions/60750529/detecting-duration-of-key-press-usi
 
 https://www.xjavascript.com/blog/how-to-detect-if-multiple-keys-are-pressed-at-once-using-javascript/#solution-track-key-states-with-a-set - using a set for key press detection 
 
+https://stackoverflow.com/questions/9071573/is-there-a-simple-way-to-make-a-random-selection-from-an-array-in-javascript-or - choose function 
 
 notes to self
 ---

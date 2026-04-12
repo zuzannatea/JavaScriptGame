@@ -1,10 +1,10 @@
 import { canvas, player } from "../main.js";
 import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter } from "./entities.js";
-import { dist } from "./utils.js";
+import { dist, remove_item } from "./utils.js";
 
 const level_details = {
     1 : {
-        Swarmer : 6
+        Teleporter : 1
     },
 }
 const TileType = {
@@ -23,11 +23,9 @@ class GameManager{
     construct_enemies(){
         for (let enemy in level_details[this.current_level.id]){
             for (let num = 0; num < level_details[this.current_level.id][enemy]; num++){
-                console.log("For",enemy,"number",num);
                 this.add_entity(enemy);
             }
         }
-        console.log("CREATED",this.enemies);
 /*         for (let i = 0; i < amt_of_enemies; i++) {
             this.enemies.push(this.add_entity(Enemy));
         }
@@ -50,10 +48,7 @@ class GameManager{
         let index = this.enemies.indexOf(entity_instance);
 
         if (index > -1){
-            console.log(this.enemies);
             this.enemies.splice(index,1);
-            console.log("REMOVED", entity_instance);
-            console.log(this.enemies);
             return true;
         }
         else{
@@ -91,9 +86,9 @@ class Level{
         this.id = id;
         this.map = [];
         //for pathfindi g
-        this.to_be_drawn = [];
         this.player_pos = {x:0, y:0};
         this.distance_to_player = [];
+        this.warning_tiles = [];
     }
     get_adjacent_tiles_with_weight(row,col){
         let adj_tiles = [];
@@ -132,7 +127,6 @@ class Level{
         return pq.sort((a, b) => a.value - b.value);
     }
     get_shortest_path(source_tile, destination_tile){
-        //console.log("Ran");
         let [sourceX, sourceY] = source_tile;
         let [destX, destY] = destination_tile;
         if (this.get_tile(destX, destY) === "red" || this.get_tile(sourceX,sourceY) === "red"){
@@ -140,7 +134,6 @@ class Level{
             return -1;
         }
         let adj = [];
-        //console.log("input read");
         for (let row = 0; row < this.map.length; row++){
             adj.push([]);
             for (let col = 0; col < this.map[0].length; col++){
@@ -152,7 +145,6 @@ class Level{
             }
         }
         let pq = [];
-        //console.log("got to adj; ", adj);
         let dist = [];
         for (let row = 0; row < this.map.length; row++){
             dist.push([]);
@@ -185,9 +177,25 @@ class Level{
         }
         return dist;
     }
+    update_warning_tiles(){
+        for (let tile of this.warning_tiles){
+            if (tile.timestamp - Date.now() < 0){
+                this.warning_tiles = remove_item(tile, this.warning_tiles);
+            }
+        }
+    }
+    set_warning_tiles(x,y,timestamp){
+        this.warning_tiles.push({
+            x : x,
+            y : y,
+            timestamp : timestamp
+        });
+        return;
+    }
 
 
     draw(context){
+        this.update_warning_tiles();
         let startX = Math.floor(canvas.width/2);
         let startY = Math.floor(canvas.height/2);
         let playerPosX = Math.floor(player.x);
@@ -200,7 +208,6 @@ class Level{
         let [y,x] = player_tiles[0];
         if (dist(this.player_pos, player) > TILE_SIZE*2){
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
-            //console.log([y,x], this.distance_to_player);
             this.player_pos = {x : player.x, y : player.y};
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
@@ -208,14 +215,13 @@ class Level{
                 context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
                 let player_tiles = player.get_current_tiles();
                 for (let tile of player_tiles){
-                    for (let place of this.to_be_drawn){
-                        if (r === place[0] && c === place[1]){
-                            context.fillStyle = 'yellow';
-                        }
-                    }
                     if (r === tile[0] && c === tile[1]){
                         context.fillStyle = "purple";
-
+                    }
+                }
+                for (let warning of this.warning_tiles){
+                    if (r === warning.x && c === warning.y){
+                        context.fillStyle = "brown";
                     }
                 }
                 context.fillRect((r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -254,7 +260,6 @@ class Level{
             this.generate_level();
         }
         
-        //console.log(get_shortest_path([0,0],[this.map.length, this.map[0].length]));
     }
     check_viability(){
         let floor_counter = 0;
