@@ -347,6 +347,8 @@ class Swarmer extends Enemy{
 	constructor(width, height) {
 		super(width, height);
 		this.speed = 3;
+		this.speed_modifier = 1.05;
+		this.base_speed = 3;
 		this.max_health = 25;
 		this.colour = "liliac";
 		this.friends = [];
@@ -359,10 +361,10 @@ class Swarmer extends Enemy{
 				counter = counter + 1;
 			}
 		}
-		return this.count_friends;
+		return counter;
 	}
 	find_a_friend(){
-		best_friend = {entity : undefined, distance : 0}
+		let best_friend = {entity : undefined, distance : 0}
 		for (let enemy of game_manager.enemies){
 			if (enemy instanceof Swarmer && enemy != this && (!enemy in this.friends)){
 				let distance = calcDist(this,entity);
@@ -371,14 +373,39 @@ class Swarmer extends Enemy{
 				}
 			}
 		}
-		return best_friend;
-
+		if (best_friend.entity){
+			return {x : best_friend.entity.x, y : best_friend.entity.y};
+		}
+		return this.pick_a_point;
 	}
+	hunt_a_friend(){
+		if (this.target.length === 0 || is_in_range(this,this.target, 30)){
+			this.target = this.find_a_friend();
+		}
+		let xMove;
+		let yMove;
+		let dx = this.target.x - this.x;
+		let dy = this.target.y - this.y;
+		let distance = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
+		if (distance <= 0.1){
+			this.target = this.find_a_friend();
+			return;
+		}
+		dx = dx/distance;
+		dy = dy/distance;
+		xMove = dx*this.speed/4;
+		yMove = dy*this.speed/4;
+		if (!(this.try_move(xMove,0) && this.try_move(0, yMove))){
+			this.snap_to_tile();
+			this.target = this.find_a_friend();
+		}
+	}
+
 	update_current_friends(){
 		let entities = game_manager.entities_in_range(this);
 		let current_friends = [];
 		for (let entity of entities){
-			if (entity instanceof Swarmer && enemy != this){
+			if (entity instanceof Swarmer && entity != this){
 				current_friends.push(entity);
 			}
 		}
@@ -389,23 +416,31 @@ class Swarmer extends Enemy{
 
 	update(current_level, priority=0){
 		this.update_current_friends();
-		if (this.count_friends < 2){
-			this.find_a_friend();
+		//spped modifier 
+		if (this.friends.length > 3){
+			this.speed = this.speed * (this.speed_modifier*this.friends.length);
 		}
-		else if (this.count_friends < 5){
-			this.wander()
+		else{
+			this.speed = this.base_speed;
+		}
+		//behaviour 
+		if (this.count_friends() < 1 && this.count_friends() > 0){
+			this.target = this.find_a_friend();
+		}
+		else if (this.count_friends() < 5){
+			this.wander();
 		}
 		else{
 			this.hunt(current_level, priority);
 		}
+		//standard attack 
 		if (calcDist(this,player) < 50){
-			this.colour = "orange";
-			this.attack_charge();
+				this.colour = "orange";
+				this.attack_charge();
 		}
+
+		
 	}
-
-
-
 }
 class Charger extends Enemy{
 	constructor(width, height) {

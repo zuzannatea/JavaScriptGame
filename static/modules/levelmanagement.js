@@ -4,17 +4,9 @@ import { dist } from "./utils.js";
 
 const level_details = {
     1 : {
-        Charger : 1
+        Swarmer : 6
     },
 }
-/* const level_details = {
-    1 : {
-        Enemy : 3
-        Player : 2
-        ...etc
-    },
-}
- */
 const TileType = {
     wall : "red",
     floor : "green"
