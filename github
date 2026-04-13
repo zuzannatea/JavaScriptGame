@@ -1,14 +1,12 @@
 
 TODO
-- make levels traversible 
-    - unblock door after reaching a certain score
-- improve Swarmer so it aims for an offset of player
 - add slight player offset for Swarmer? and/or improve entity collision 
 - fix boost spawning so its not in the same place of the tile but center
+- fix game crashing when entity collision
+
+- add flask & database & base css
+- add a cheats console
+- move player into GameManager
 
 fixed:
-- Added level progression 
-- Modified level_details with more levels added
-- Added spawn_exit() in Level class
-- Restructured GameManager class 
- 
+- somewhat fixed loading errors

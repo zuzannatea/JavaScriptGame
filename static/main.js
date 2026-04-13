@@ -1,7 +1,6 @@
 import { Player } from './modules/entities.js';
 import { GameManager, TILE_SIZE } from './modules/levelmanagement.js';
 
-
 let canvas;
 let context;
 

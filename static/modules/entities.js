@@ -171,6 +171,8 @@ class Enemy extends Entity{
 	}
 
 	update(current_level, priority=0){
+		if (current_level.distance_to_player.length===0){return;}
+
 		if (calcDist(this,player) > 300){
 			this.colour = "purple";
 			
@@ -218,6 +220,8 @@ class Enemy extends Entity{
 		
 		let current_tiles = this.get_current_tiles();
 		let possible_tiles = [];
+		if (distance.length===0){return;}
+
 		let [y_current, x_current] = current_tiles[0];
 		if (y_current < distance.length-1){
 			possible_tiles.push({
@@ -316,6 +320,7 @@ class Zombie extends Enemy{
 		this.colour = "teal";
 	}
 	update(current_level, priority=0){
+		if (current_level.distance_to_player.length===0){return;}
 		if (calcDist(this,player) < 50){
 			this.colour = "orange";
 			this.attack_charge();
@@ -401,6 +406,7 @@ class Swarmer extends Enemy{
 		}
 	}
 	update(current_level, priority=0){
+		if (current_level.distance_to_player.length===0){return;}
 		this.update_current_friends();
 		//spped modifier 
 		if (this.friends.length > 3){
@@ -547,6 +553,8 @@ class Charger extends Enemy{
 		}
 	}
 	update(current_level, priority=0){
+		if (current_level.distance_to_player.length===0){return;}
+
 		if (this.exists_straight_path(current_level.distance_to_player)){
 			this.colour = "brown";
 			this.attack_charge();
@@ -650,6 +658,8 @@ class Teleporter extends Enemy{
 	}
 
 	update(current_level, priority=0){
+		if (current_level.distance_to_player.length===0){return;}
+
 		if (this.check_buffering_time()){return;}
 
 		if (calcDist(this,player) > 300){
