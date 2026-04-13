@@ -3,6 +3,7 @@ import { GameManager, TILE_SIZE } from './modules/levelmanagement.js';
 
 let canvas;
 let context;
+let request;
 
 let fpsInterval = 100 / 30;
 let then = Date.now();
@@ -32,7 +33,7 @@ function init(){
 
 
 function draw(){
-    window.requestAnimationFrame(draw);
+    request = window.requestAnimationFrame(draw);
     let now = Date.now();
     let elapsed = now - then;
     if (elapsed <= fpsInterval){
@@ -97,11 +98,10 @@ function deactivate(event){
 
 }
 
-/* function stop(){
+function stop(){
     window.cancelAnimationFrame(request);
     window.removeEventListener("keydown", activate);
     window.removeEventListener("keyup", deactivate)
 
 }
- */
-export { canvas, player, game_manager };
+export { canvas, player, game_manager, stop };

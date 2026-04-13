@@ -10,9 +10,9 @@ DROP TABLE IF EXISTS past_games;
 CREATE TABLE past_games
 (
     user_id TEXT, 
-    timestamp DATETIME,
     score INTEGER,
     cheats_used BOOLEAN,
+    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY(user_id,timestamp),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 ); 

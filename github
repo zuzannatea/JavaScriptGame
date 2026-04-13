@@ -7,6 +7,12 @@ TODO
 - add flask & database & base css
 - add a cheats console
 - move player into GameManager
+- add the ability to finish game and consult w app.py (Ajax)
+
 
 fixed:
-- somewhat fixed loading errors
+- continue_as_guest() added to Flask 
+- added is_guest to session 
+- updated database structure (added TIMESTAMP with defaults)
+- modified /store_result route
+- added stop() to both GameManager class and main.js

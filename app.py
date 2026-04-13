@@ -4,6 +4,7 @@ from flask_session import Session
 from forms import RegistrationForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from random import randint
 
 
 app = Flask(__name__)
@@ -17,15 +18,13 @@ app.teardown_appcontext(close_db)
 @app.before_request
 def load_logged_in_user():
     g.user = session.get("user_id", None)
+    g.is_guest = session.get("is_guest",None)
 
 def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
         if g.user is None:
             return redirect(url_for('login', next=request.url))
-        #it will reember where you were and redirect to that place 
-        #itll do that by sticking it into the url 
-        #when we pull login, the url will say both login and past page
         return view(*args, **kwargs)
     return wrapped_view
 
@@ -51,7 +50,14 @@ def register():
                 VALUES (?, ?);
                 """, (user_id,generate_password_hash(password)) )
             db.commit()
-            return redirect(url_for('index'))
+            session.clear()
+            session["user_id"] = user_id 
+            session["is_guest"] = False 
+            next_page = request.args.get("next")
+            if not next_page:
+                next_page = url_for("index")
+            return redirect(next_page)
+
     return render_template("registration_form.html", form=form)
 
 @app.route("/login", methods=["POST", "GET"])
@@ -70,6 +76,7 @@ def login():
         else:
             session.clear()
             session["user_id"] = user_id 
+            session["is_guest"] = False 
             next_page = request.args.get("next")
             if not next_page:
                 next_page = url_for("index")
@@ -81,4 +88,42 @@ def login():
 def logout():
     session.clear() 
     return redirect(url_for('index'))
+
+@app.route("/continue_as_guest", methods=["POST"])
+def continue_as_guest():
+    db = get_db()
+    user_id = "guest"+randint(100,999)
+    password = randint(100,999)
+    conflict = db.execute("""SELECT * FROM users
+                    WHERE user_id == ?;""", (user_id,)).fetchone()
+    while conflict:
+        user_id = "guest"+randint(100,999)
+        conflict = db.execute("""SELECT * FROM users
+                    WHERE user_id == ?;""", (user_id,)).fetchone()
+    db.execute(
+        """INSERT INTO users (user_id,password,is_guest)
+        VALUES(?,?,?);""", (user_id,generate_password_hash(password),1)
+    )
+    db.commit()
+    session.clear()
+    session["user_id"] = user_id
+    session["is_guest"] = True 
+    next_page = request.args.get("next")
+    if not next_page:
+        next_page = url_for("index")
+    return redirect(next_page)
+
+
+@app.route("/store_result", methods=["POST"])
+def store_result():
+    score = int(request.form["score"])
+    db = get_db()
+    try:
+        db.execute("""INSERT INTO past_games(user_id, score, cheats_used)
+            VALUES(?, ?, ?); """,
+            (g.user_id, score, True))
+        db.commit()
+        return "Success"
+    except:
+        return "Failure"
 

@@ -1,4 +1,4 @@
-import { canvas, player } from "../main.js";
+import { canvas, player, stop as stopGame } from "../main.js";
 import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
 import { dist, remove_item, is_colliding, choose } from "./utils.js";
 
@@ -29,14 +29,39 @@ const TileType = {
 let TILE_SIZE = 32;
 let COLLIDER_TILES = [TileType.wall];
 
+let xhttp;
+
 class GameManager{
     constructor(){
         this.enemies = [];
         this.current_level = new Level(1);
-        this.final_level = 5;
+        this.final_level_id = 1;
         this.stat_boosts = [];
         this.exit_tiles;
     }
+    stop(){
+        let data = new FormData();
+        data.append("score",player.score);
+        xhttp = new XMLHttpRequest();
+        xhttp.addEventListener("readystatechange", this.handle_response, false);
+        xhttp.open("POST", "/store_result", true);
+        xhttp.send(data);
+
+        stopGame();
+    }
+    handle_response() {
+        if ( xhttp.readyState === 4 ) {
+            if ( xhttp.status === 200 ) {
+                if (xhttp.responseText === "success"){
+                    return;
+                }
+            } 
+            else {
+                console.log("Problem " + xhttp.status);
+            }
+        }
+    }
+
     check_progression(){
         if (!this.exit_tiles && player.score >= level_details[this.current_level.id].score_needed){
             this.exit_tiles = this.current_level.spawn_exit();
@@ -66,6 +91,11 @@ class GameManager{
         player.x = Math.floor(canvas.width/2);
         player.y = Math.floor(canvas.height/2);
         player.curr_health = player.max_health;
+        if (this.current_level.id === this.final_level_id){
+            console.log("Done");
+            this.stop();
+            return;
+        }
         let new_level_id = this.current_level.id + 1;
         this.current_level = new Level(new_level_id);
         this.construct_game();
