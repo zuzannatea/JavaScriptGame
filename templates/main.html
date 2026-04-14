@@ -1,13 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Game</title>
+{% extends "base.html" %}
+
+    {% block head %}
     <link rel="stylesheet" href="{{ url_for('static',filename='main.css') }}"/>
     <script src="{{ url_for('static',filename='main.js') }}" type="module"></script>
+    {% endblock %}
 
-</head>
-<body>
+    {% block main %}
     <canvas></canvas>
-</body>
-</html>
+    <div id="html-overlay"></div>
+    {% endblock %}

@@ -1,6 +1,8 @@
 import { canvas, player, stop as stopGame } from "../main.js";
 import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
 import { dist, remove_item, is_colliding, choose } from "./utils.js";
+import { UIManager } from "./ui.js";
+
 
 const level_details = {
     1 : {
@@ -38,6 +40,7 @@ class GameManager{
         this.final_level_id = 1;
         this.stat_boosts = [];
         this.exit_tiles;
+        this.ui_manager = new UIManager();
     }
     stop(){
         let data = new FormData();

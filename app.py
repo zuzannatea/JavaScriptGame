@@ -92,12 +92,12 @@ def logout():
 @app.route("/continue_as_guest", methods=["POST"])
 def continue_as_guest():
     db = get_db()
-    user_id = "guest"+randint(100,999)
-    password = randint(100,999)
+    user_id = "guest"+str(randint(100,999))
+    password = str(randint(100,999))
     conflict = db.execute("""SELECT * FROM users
                     WHERE user_id == ?;""", (user_id,)).fetchone()
     while conflict:
-        user_id = "guest"+randint(100,999)
+        user_id = "guest"+str(randint(100,999))
         conflict = db.execute("""SELECT * FROM users
                     WHERE user_id == ?;""", (user_id,)).fetchone()
     db.execute(
@@ -121,9 +121,21 @@ def store_result():
     try:
         db.execute("""INSERT INTO past_games(user_id, score, cheats_used)
             VALUES(?, ?, ?); """,
-            (g.user_id, score, True))
+            (g.user, score, True))
         db.commit()
         return "Success"
     except:
         return "Failure"
 
+@app.route("/leaderboard", methods=["POST", "GET"])
+def leaderboard():
+    db = get_db()
+    results = db.execute("""SELECT user_id,score
+                        FROM past_games 
+                        ORDER BY score DESC 
+                        LIMIT 10;""").fetchall()
+    return render_template("leaderboard.html", results=results)
+
+@app.route("/log_cheat_usage", methods=["POST"])
+def log_cheat_usage():
+    pass

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+    {% block main %}
+    
+    <p>See your past games on your profile!</p>
+    <p><i>A list of the best people on the website. Are you one of them? Do you want to be friends with them?</i></p>
+        <ol>
+            {%for result in results%}
+            <li>
+                {{result["user_id"]}} 
+                {{ result["score"] }}
+            </li>
+            {%endfor%}
+        </ol>
+
+{% endblock %}
