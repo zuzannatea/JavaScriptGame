@@ -21,14 +21,39 @@ class UIManager{
         this["create_"+this.ui_states[this.current_ui_state_index]]();
 
     }
-    continue_as_guest(){
+    async continue_as_guest(){
+        try {
+            let response = await fetch("/continue_as_guest",
+                {method : "POST",
+                credentials: "same-origin"
+                }
+            );
+            console.log(response);
+            if (response.ok){
+                const data = await response.json();
+                let p1 = document.querySelector("header p:first-child");
+                let p2_a = document.querySelector("header p:last-child a");
+                p1.innerHTML = data.user_id;
+                p2_a.innerHTML = "Logout";
+                p2_a.href = "{{ url_for('logout') }}";
+
+                this.progress();
+                return true;
+            }
+            else{
+                return false; 
+            }
+        }
+        catch{
+            return false;
+        }
         
     }
 
     create_button_with_link(caption,destination){
         let button = document.createElement("button");
         let link = document.createElement("a");
-        link.href = "{{ url_for('{" + destination + "}') }}";
+        link.href = "/"+destination;
         link.innerHTML = caption;
         this.html_overlay.appendChild(button);
         button.appendChild(link);
@@ -48,21 +73,32 @@ class UIManager{
             this.html_overlay.removeChild(this.html_overlay.firstChild);
         }
     }
+    hide_screen(){
+        this.html_overlay.style.display = "none";
+    }
+    show_screen(){
+        this.html_overlay.style.display = "block";
+
+    }
     create_start_screen(){
         let startButton = this.create_button_with_event_listener("Start", "progress");
         let rulesButton = this.create_button_with_link("Rules", "login");
         let creditsButton = this.create_button_with_link("Credits", "login");
     }
     create_sign_in_screen(){
+        let p1 = document.querySelector("header p:first-child a");
+        if (!p1){
+            this.progress();
+            return;
+        }
         let signInButton = this.create_button_with_link("Sign In", "register");
-        let continueAsGuestButton = this.create_button_with_link("Continue as Guest", "continue_as_guest");
-
+        let continueAsGuestButton = this.create_button_with_event_listener("Continue as Guest", "continue_as_guest");
     }
     create_press_start_screen(){
-
+        let signInButton = this.create_button_with_event_listener("Play", "progress");
     }
     create_game_screen(){
-
+        this.hide_screen();
     }
     create_pause_screen(){
 

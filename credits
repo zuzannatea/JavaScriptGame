@@ -42,6 +42,14 @@ https://www.xjavascript.com/blog/how-to-detect-if-multiple-keys-are-pressed-at-o
 
 https://stackoverflow.com/questions/9071573/is-there-a-simple-way-to-make-a-random-selection-from-an-array-in-javascript-or - choose function 
 
+
+interacting w flask without reloading page
+https://stackoverflow.com/questions/79731335/how-to-refresh-items-on-a-page-without-page-refresh-in-flask
+https://dnmtechs.com/updating-flask-dynamic-data-without-page-reload-in-python-3/
+https://www.w3schools.com/js/js_api_fetch.asp
+https://developer.mozilla.org/en-US/docs/Web/API/URL_API/Resolving_relative_references
+
+
 notes to self
 ---
 there'll probably be a need for some kind of stages system 

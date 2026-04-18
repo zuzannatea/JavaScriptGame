@@ -17,3 +17,10 @@ EXTTRA
 
 
 fixed:
+- Added all the ui starter screens 
+- Added jsonify to app.py 
+- Added async continue_as_guest() to UIManager class 
+- Made login visible only to not-logged in users
+- Modified base.html 
+- Changed urls in create_button_with_link() into absolute as bug fix in UIManager class 
+- Added hide_screen() and show_screen() in UIManager class

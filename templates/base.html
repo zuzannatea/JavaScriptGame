@@ -11,13 +11,12 @@
     <header>
         {% if g.user %}
         <p>User id: {{g.user}}</p>
-            <p><a href="{{ url_for('logout') }}">Logout </a></p>
+        <p><a href="{{ url_for('logout') }}">Logout </a></p>
         {%else %}
             <p><a href="{{ url_for('register') }}">Register</a></p>
             <p><a href="{{ url_for('login') }}">Login</a></p>
 
         {% endif %}
-        <h1>Game</h1>
     </header>
     {% block main %}
     {% endblock %}

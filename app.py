@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, redirect, url_for, g, request
+from flask import Flask, render_template, jsonify, session, redirect, url_for, g, request
 from database import get_db, close_db
 from flask_session import Session 
 from forms import RegistrationForm, LoginForm
@@ -62,6 +62,12 @@ def register():
 
 @app.route("/login", methods=["POST", "GET"])
 def login():
+    if g.user:
+        next_page = request.args.get("next")
+        if not next_page:
+            next_page = url_for("index")
+        return redirect(next_page)
+
     form = LoginForm()
     if form.validate_on_submit():
         user_id = form.user_id.data 
@@ -108,10 +114,12 @@ def continue_as_guest():
     session.clear()
     session["user_id"] = user_id
     session["is_guest"] = True 
-    next_page = request.args.get("next")
+    """ next_page = request.args.get("next")
     if not next_page:
         next_page = url_for("index")
-    return redirect(next_page)
+    return redirect(next_page) """
+    return jsonify({'status' : 'success',
+                    'user_id' : user_id})
 
 
 @app.route("/store_result", methods=["POST"])
