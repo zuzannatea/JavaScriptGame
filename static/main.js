@@ -26,7 +26,7 @@ function init(){
     html_overlay.style.height = `${h}px`;
 
     game_manager = new GameManager();
-    player = new Player();
+    //player = new Player();
 
     game_manager.construct_game(context);
 
@@ -45,47 +45,37 @@ function draw(){
         return;
     }
     then = now - (elapsed % fpsInterval);
-    player.update();
-    if (player.running){
+    game_manager.player.update();
+    if (game_manager.player.running){
         context.clearRect(0, 0, canvas.width, canvas.height);
         
         game_manager.draw(context);
         game_manager.update();
 
-        player.draw(context);
+        game_manager.player.draw(context);
     }
 
 }
 
 
-let keybinds = {
-    " " : "isAttacking",
-    "ArrowLeft" : "moveLeft",
-    "ArrowUp" : "moveUp",
-    "ArrowRight" : "moveRight",
-    "ArrowDown" : "moveDown",
-    "q" : "specialMove",
-    "Q" : "specialMoveModifier",
-    "f" : "running"
-
-}
 
 function activate(event){
     let key = event.key;
-    if (key in keybinds){
-        event.preventDefault();
-    }
-    if (keybinds[key]){
+    
+    event.preventDefault();
+    game_manager.handle_key_presses(key);
+/*     if (keybinds[key]){
         if (key === "q" && !player.pressedKeys.has("specialMove")){
             player.keyPressTimer = Date.now();
         }
         player.pressedKeys.add(keybinds[key]);
             //player[keybinds[key]] = true;
     }
-}
+ */}
 function deactivate(event){
     let key = event.key;
-    if (keybinds[key]){
+    game_manager.handle_key_releases(key);
+/*     if (keybinds[key]){
         //player[keybinds[key]] = false;
         if (key === "q"){
             console.log(Date.now()-player.keyPressTimer);
@@ -100,7 +90,7 @@ function deactivate(event){
         player.pressedKeys.delete(keybinds[key]);
 
     }
-
+ */
 }
 
 function stop(){

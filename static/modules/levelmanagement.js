@@ -1,5 +1,5 @@
 import { canvas, player, stop as stopGame } from "../main.js";
-import { Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
+import { Player, Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
 import { dist, remove_item, is_colliding, choose } from "./utils.js";
 import { UIManager } from "./ui.js";
 
@@ -33,18 +33,58 @@ let COLLIDER_TILES = [TileType.wall];
 
 let xhttp;
 
+let keybinds = {
+    " " : "isAttacking",
+    "ArrowLeft" : "moveLeft",
+    "ArrowUp" : "moveUp",
+    "ArrowRight" : "moveRight",
+    "ArrowDown" : "moveDown",
+    "q" : "specialMove",
+    "Q" : "specialMoveModifier",
+    "f" : "running"
+
+}
+
 class GameManager{
     constructor(){
         this.enemies = [];
-        this.current_level = new Level(1);
+        this.player = new Player();
+        this.current_level = new Level(1, this.player);
         this.final_level_id = 1;
         this.stat_boosts = [];
         this.exit_tiles;
         this.ui_manager = new UIManager();
     }
+    handle_key_presses(key){
+        if (keybinds[key]){
+            if (key === "q" && !this.player.pressedKeys.has("specialMove")){
+                this.player.keyPressTimer = Date.now();
+            }
+            this.player.pressedKeys.add(keybinds[key]);
+                //player[keybinds[key]] = true;
+        }
+    }
+    handle_key_releases(key){
+        if (keybinds[key]){
+            //player[keybinds[key]] = false;
+            if (key === "q"){
+                console.log(Date.now()-this.player.keyPressTimer);
+                if (Date.now()-this.player.keyPressTimer < 850){
+                    this.player.shortQTap = true;
+                }
+                else{
+                    this.player.longQTap = true;
+                }
+                this.player.keyPressTimer = 0;
+            }
+            this.player.pressedKeys.delete(keybinds[key]);
+
+        }
+
+    }
     stop(){
         let data = new FormData();
-        data.append("score",player.score);
+        data.append("score",this.player.score);
         xhttp = new XMLHttpRequest();
         xhttp.addEventListener("readystatechange", this.handle_response, false);
         xhttp.open("POST", "/store_result", true);
@@ -66,7 +106,7 @@ class GameManager{
     }
 
     check_progression(){
-        if (!this.exit_tiles && player.score >= level_details[this.current_level.id].score_needed){
+        if (!this.exit_tiles && this.player.score >= level_details[this.current_level.id].score_needed){
             this.exit_tiles = this.current_level.spawn_exit();
                     }
         if (this.exit_tiles){
@@ -79,7 +119,7 @@ class GameManager{
         
     }
     check_exiting(){
-        let player_tiles = player.get_current_tiles();
+        let player_tiles = this.player.get_current_tiles();
         for (let tile of player_tiles){
             if ((tile[1] === this.exit_tiles.x1 || tile[1] === this.exit_tiles.x2) && tile[0] === this.exit_tiles.y){
                 return true;
@@ -91,16 +131,16 @@ class GameManager{
         this.enemies = [];
         this.stat_boosts = [];
         this.exit_tiles = undefined;
-        player.x = Math.floor(canvas.width/2);
-        player.y = Math.floor(canvas.height/2);
-        player.curr_health = player.max_health;
+        this.player.x = Math.floor(canvas.width/2);
+        this.player.y = Math.floor(canvas.height/2);
+        this.player.curr_health = this.player.max_health;
         if (this.current_level.id === this.final_level_id){
             console.log("Done");
             this.stop();
             return;
         }
         let new_level_id = this.current_level.id + 1;
-        this.current_level = new Level(new_level_id);
+        this.current_level = new Level(new_level_id, this.player);
         this.construct_game();
         return;
     }
@@ -140,8 +180,8 @@ class GameManager{
     update_stat_boosts(){
         let to_be_removed = []
         for (let boost of this.stat_boosts){
-            if (is_colliding(boost, player)){
-                player.claim_boost(boost);
+            if (is_colliding(boost, this.player)){
+                this.player.claim_boost(boost);
                 to_be_removed.push(boost);
             }
         }
@@ -183,10 +223,10 @@ class GameManager{
         entity_class = eval(entity_class);
         let entity;
         if (args.length === 0){
-            entity = new entity_class(canvas.width, canvas.height);
+            entity = new entity_class(canvas.width, canvas.height, this.player);
         }
         else{
-            entity = new entity_class(canvas.width, canvas.height, args);
+            entity = new entity_class(canvas.width, canvas.height, this.player, args);
         }
         this.enemies.push(entity);
         return entity;
@@ -206,7 +246,7 @@ class GameManager{
 }
 let MAP_SIZE_MODIFIER = 1.5;
 class Level{
-    constructor(id){
+    constructor(id, player){
         this.id = id;
         console.log(id);
         this.map = [];
@@ -215,6 +255,7 @@ class Level{
         this.distance_to_player = [];
         this.warning_tiles = [];
         this.exit;
+        this.player = player;
     }
     spawn_exit(){
         if (this.exit){return;}
@@ -346,22 +387,22 @@ class Level{
         this.update_warning_tiles();
         let startX = Math.floor(canvas.width/2);
         let startY = Math.floor(canvas.height/2);
-        let playerPosX = Math.floor(player.x);
-        let playerPosY = Math.floor(player.y);
+        let playerPosX = Math.floor(this.player.x);
+        let playerPosY = Math.floor(this.player.y);
 /*         let offsetX = ((startX - playerPosX) / TILE_SIZE);
         let offsetY = ((startY - playerPosY) / TILE_SIZE);
  */   
 
-        let player_tiles = player.get_current_tiles();
+        let player_tiles = this.player.get_current_tiles();
         let [y,x] = player_tiles[0];
-        if (dist(this.player_pos, player) > TILE_SIZE*2){
+        if (dist(this.player_pos, this.player) > TILE_SIZE*2){
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
-            this.player_pos = {x : player.x, y : player.y};
+            this.player_pos = {x : this.player.x, y : this.player.y};
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
             for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
                 context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
-                let player_tiles = player.get_current_tiles();
+                let player_tiles = this.player.get_current_tiles();
                 for (let tile of player_tiles){
                     if (r === tile[0] && c === tile[1]){
                         context.fillStyle = "purple";
@@ -481,7 +522,7 @@ class Level{
         this.map = newMap;
     }
     flood_fill(){
-        let start_tiles = player.get_current_tiles();
+        let start_tiles = this.player.get_current_tiles();
         let visited = [];
         for (let x = 0; x < this.map.length; x += 1){
             visited.push([])

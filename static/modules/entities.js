@@ -134,8 +134,10 @@ class Entity{
 }
 
 class Enemy extends Entity{
-	constructor(width, height) {
+	constructor(width, height, player) {
 		super();
+		this.player = player;
+
 		this.canvas = [width, height];
 		this.x;
 		this.y;
@@ -173,12 +175,12 @@ class Enemy extends Entity{
 	update(current_level, priority=0){
 		if (current_level.distance_to_player.length===0){return;}
 
-		if (calcDist(this,player) > 300){
+		if (calcDist(this,this.player) > 300){
 			this.colour = "purple";
 			
 			this.wander();
 		}
-		else if (calcDist(this,player) < 50){
+		else if (calcDist(this,this.player) < 50){
 			this.colour = "orange";
 			this.attack_charge();
 		}
@@ -261,10 +263,10 @@ class Enemy extends Entity{
 
 	attack_charge(){
 
-		if (calcDist(this,player) >= 25){
+		if (calcDist(this,this.player) >= 25){
 			let xMove; let yMove;
-			let dx = player.x - this.x;
-			let dy = player.y - this.y;
+			let dx = this.player.x - this.x;
+			let dy = this.player.y - this.y;
 			let dist = Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
 			dx = dx/dist;
 			dy = dy/dist;
@@ -273,9 +275,9 @@ class Enemy extends Entity{
 			this.try_move(xMove, yMove);
 		}
 
-		if (calcDist(this,player) < 25){
+		if (calcDist(this,this.player) < 25){
 			this.colour = "black";
-			player.take_damage(this.strength);
+			this.player.take_damage(this.strength);
 		}
 		else{this.colour = "orange";}
 
@@ -321,7 +323,7 @@ class Zombie extends Enemy{
 	}
 	update(current_level, priority=0){
 		if (current_level.distance_to_player.length===0){return;}
-		if (calcDist(this,player) < 50){
+		if (calcDist(this,this.player) < 50){
 			this.colour = "orange";
 			this.attack_charge();
 		}
@@ -426,7 +428,7 @@ class Swarmer extends Enemy{
 			this.hunt(current_level, priority);
 		}
 		//standard attack 
-		if (calcDist(this,player) < 50){
+		if (calcDist(this,this.player) < 50){
 				this.colour = "orange";
 				this.attack_charge();
 		}
@@ -449,7 +451,7 @@ class Charger extends Enemy{
 		if (this.charging){
 			context.beginPath();
 			context.moveTo(this.x+(this.length/2),this.y+(this.height/2));
-			context.lineTo(player.x+(player.length/2),player.y+(player.height/2));
+			context.lineTo(this.player.x+(this.player.length/2),this.player.y+(this.player.height/2));
 			context.strokeStyle = "orange";
 			context.lineWidth = 1;
 			context.stroke();
@@ -519,15 +521,15 @@ class Charger extends Enemy{
 	}
 	attack_charge(){
 		this.charging = true;
-		let player_distance = calcDist(this,player);
+		let player_distance = calcDist(this,this.player);
 		if (player_distance >= 32){
-			this.target = {x : player.x, y : player.y};
+			this.target = {x : this.player.x, y : this.player.y};
 			this.move_towards_target();
 		}
 
 		if (player_distance < 32){
 			this.colour = "black";
-			player.take_damage(this.strength);
+			this.player.take_damage(this.strength);
 		}
 		else{this.colour = "maroon";}
 
@@ -559,7 +561,7 @@ class Charger extends Enemy{
 			this.colour = "brown";
 			this.attack_charge();
 		}
-		else if (calcDist(this,player) > 300){
+		else if (calcDist(this,this.player) > 300){
 			this.charging = false;
 			this.wander();
 		}
@@ -596,8 +598,8 @@ class Splitter extends Enemy{
 
 }
 class Teleporter extends Enemy{
-	constructor(width, height) {
-		super(width, height);
+	constructor(width, height,player) {
+		super(width, height, player);
 		this.colour = "pink";
 		this.speed = 2;
 		this.buffering_timestamp;
@@ -661,11 +663,12 @@ class Teleporter extends Enemy{
 		if (current_level.distance_to_player.length===0){return;}
 
 		if (this.check_buffering_time()){return;}
+			//console.log(this,this.player);
 
-		if (calcDist(this,player) > 300){
+		if (calcDist(this,this.player) > 300){
 			this.wander();
 		}
-		else if(calcDist(this,player) > 150){
+		else if(calcDist(this,this.player) > 150){
 			if (this.can_teleport()){
 				this.teleport(current_level);
 			}
@@ -673,7 +676,7 @@ class Teleporter extends Enemy{
 				this.hunt(current_level, priority);
 			}
 		}
-		else if (calcDist(this,player) < 50){
+		else if (calcDist(this,this.player) < 50){
 			this.colour = "orange";
 			this.attack_charge();
 		}
