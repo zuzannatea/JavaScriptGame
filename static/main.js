@@ -10,15 +10,20 @@ let then = Date.now();
 
 let player;
 let game_manager;
-
+let html_overlay;
 document.addEventListener("DOMContentLoaded", init, false);
 
 function init(){
     canvas = document.querySelector("canvas");
     context = canvas.getContext("2d");
+    html_overlay = document.getElementById("html-overlay");
 
-    canvas.width = (Math.floor(window.innerWidth/TILE_SIZE)*TILE_SIZE);
-    canvas.height = (Math.floor(window.innerHeight/TILE_SIZE)*TILE_SIZE);
+    const w = Math.floor(window.innerWidth / TILE_SIZE) * TILE_SIZE;
+    const h = Math.floor(window.innerHeight / TILE_SIZE) * TILE_SIZE; 
+    canvas.width = w;
+    canvas.height = h;
+    html_overlay.style.width = `${w}px`;
+    html_overlay.style.height = `${h}px`;
 
     game_manager = new GameManager();
     player = new Player();

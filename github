@@ -4,17 +4,16 @@ TODO
 - fix boost spawning so its not in the same place of the tile but center
 - fix game crashing when entity collision
 
-- add flask & database & base css
-- add a cheats console
-- move player into GameManager
 
-- add UI screen progression 
+TODO
 - add on-screen UI player stats
 - add pause screen
+- finish screen progression
+
+EXTTRA
+- add a cheats console
+- move player into GameManager
+- add UI screen progression w css
+
 
 fixed:
-- Added /leaderboard route 
-- Changed main.html into a Jinja2 template 
-- Added UIManager 
-- Added start screen
-- Added credits.html 

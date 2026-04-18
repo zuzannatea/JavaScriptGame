@@ -234,6 +234,7 @@ class Level{
 		}
         console.log(possible_choice_in_tiles);
 		let chosen = choose(possible_choice_in_tiles);
+        console.log(chosen);
         this.exit = {x1 : chosen.x1, x2 : chosen.x2, y : chosen.y}
         return this.exit;
     }

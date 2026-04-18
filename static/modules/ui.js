@@ -17,9 +17,12 @@ class UIManager{
         if (this.current_ui_state_index != this.max_ui_state_index){
             this.current_ui_state_index = this.current_ui_state_index + 1;
         }
-        this.remove_screen();
+        this.reset_screen();
         this["create_"+this.ui_states[this.current_ui_state_index]]();
 
+    }
+    continue_as_guest(){
+        
     }
 
     create_button_with_link(caption,destination){
@@ -40,7 +43,7 @@ class UIManager{
         return button;
 
     }
-    remove_screen(){
+    reset_screen(){
         while (this.html_overlay.hasChildNodes()) {
             this.html_overlay.removeChild(this.html_overlay.firstChild);
         }
@@ -51,6 +54,8 @@ class UIManager{
         let creditsButton = this.create_button_with_link("Credits", "login");
     }
     create_sign_in_screen(){
+        let signInButton = this.create_button_with_link("Sign In", "register");
+        let continueAsGuestButton = this.create_button_with_link("Continue as Guest", "continue_as_guest");
 
     }
     create_press_start_screen(){
