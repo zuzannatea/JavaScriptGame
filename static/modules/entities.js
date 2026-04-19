@@ -1,5 +1,5 @@
 import { canvas, game_manager, player } from "../main.js";
-import {TILE_SIZE, COLLIDER_TILES, keybinds} from "./levelmanagement.js";
+import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
 import {dist as calcDist,randint, choose, is_colliding} from "./utils.js";
 
 
@@ -715,15 +715,15 @@ class Player extends Entity{
 		this.colour = "cyan";
 	
 	}
-	handle_key_presses(key){
-        if (key === "q" && !this.pressedKeys.has("specialMove")){
+	handle_key_presses(action){
+        if (action === "specialMove" && !this.pressedKeys.has("specialMove")){
             this.keyPressTimer = Date.now();
         }
-		this.pressedKeys.add(keybinds[key].action);
+		this.pressedKeys.add(action);
 		return;
 	}
-	handle_key_releases(key){
-		if (key === "q"){
+	handle_key_releases(action){
+		if (action === "specialMove"){
 			if (Date.now()-this.keyPressTimer < 850){
 				this.shortQTap = true;
 			}
@@ -732,7 +732,7 @@ class Player extends Entity{
 			}
 			this.keyPressTimer = 0;
 		}
-		this.pressedKeys.delete(keybinds[key].action);
+		this.pressedKeys.delete(action);
 		return;
 	}
 	take_damage(amount=10){

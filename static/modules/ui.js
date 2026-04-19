@@ -1,5 +1,5 @@
 class UIManager{
-    constructor(){
+    constructor(keybinds){
         this.ui_states = {
             0 : "start_screen",
             1 : "sign_in_screen",
@@ -13,6 +13,13 @@ class UIManager{
         this.html_overlay = document.getElementById("html-overlay");
         this.create_start_screen();
         this.ready = false;
+        this.keybinds = keybinds;
+        this.rebind = {
+            active : false,
+            action : null,
+            key : null
+        }
+        this.changed_rebind = false;
         this.cheats = {
             on : false,
             kill_aura : false,
@@ -24,6 +31,7 @@ class UIManager{
                 charge : null
             }
         }
+        
     }
     progress(){
         if (this.current_ui_state_index != this.max_ui_state_index){
@@ -195,21 +203,99 @@ class UIManager{
         this.ready = true;
     }
     create_pause_screen(){
+        this.reset_screen();
         let resumeButton = this.create_button_with_event_listener("Resume", "resume_functionality");
         let settingsButton = this.create_button_with_event_listener("Settings", "create_settings_screen");
         let cheatsButton = this.create_button_with_event_listener("Cheats", "create_cheats_screen");
         let rulesButton = this.create_button_with_link("Rules", "login");
         let creditsButton = this.create_button_with_link("Credits", "login");
     }
-    
-    create_end_screen(){
+    create_keybinds_console(){
+        let prettified_keybinds = {
+            isAttacking : "Attack",
+            moveLeft : "Move Left",
+            moveUp : "Move Up",
+            moveRight : "Move Right",
+            moveDown : "Move Down",
+            specialMove : "Special Move",
+            specialMoveModifier : "Special Move (Modifier)",
+            running : "Pause Game"
+        }
+
+        let table = document.createElement("table");
+        table.id = "keybinds-table";
+        for (let action in this.keybinds){
+            let row = document.createElement("tr");
+            let header = document.createElement("th");
+            row.appendChild(header);
+
+            header.innerHTML = prettified_keybinds[action];
+            for (let key of this.keybinds[action]){
+                if (key === " "){
+                    key = "Space";
+                }
+                let detail = document.createElement("td");
+                let button = document.createElement("button");
+                button.innerHTML = key;
+                button.onclick = () => this.start_rebind(action,key);
+                //button.addEventListener("click", this.start_rebind, {once : true});
+                detail.appendChild(button);
+                row.appendChild(detail);
+            }
+            table.appendChild(row);
+        }
+        return table;
+
+    }
+    start_rebind(action,key){
+        this.rebind = {
+            active : true,
+            action : action,
+            key : key
+        }
+        window.addEventListener("keydown", (e) => this.capture_rebind(e), { once: true });
+    }
+    check_for_duplicate_keybinds(key){
+        let duplicate = false; 
+        for (let action in this.keybinds){
+            for (let set_key of this.keybinds[action]){
+                if (set_key === key){
+                    duplicate = true;
+                }
+            }
+        }
+        if (duplicate === true){ return true;}
+        else {return false;}
+    }
+    capture_rebind(e){
+        if (e.key === "Backspace"){return};
+        if (this.check_for_duplicate_keybinds(e.key)){return;}
+        this.keybinds[this.rebind.action] = [e.key];
+        console.log(e.key, this.rebind.action);
+        this.rebind = {
+            active : false,
+            action : null,
+            key : null
+        }
+        this.changed_rebind = true;
+        console.log(this.keybinds);
+        this.create_settings_screen();
+        return;
 
     }
     create_settings_screen(){
         this.reset_screen();
+        let goBack = this.create_button_with_event_listener("Go back", "create_pause_screen");
+        let music = this.create_checkbox("music");
+        let table = this.create_keybinds_console();
+        this.html_overlay.appendChild(music);
+        this.html_overlay.appendChild(table);
+        
     }
     create_cheats_screen(){
         this.reset_screen();
+        let goBack = this.create_button_with_event_listener("Go back", "create_pause_screen");
+        
         this.create_cheats_console();
         document.getElementById("invincibility").addEventListener("change", e => {
             this.cheats.invincibility = e.target.checked;
@@ -233,10 +319,13 @@ class UIManager{
                 this.cheats.on = true;
             }
         });
+    }
 
-
+    create_end_screen(){
 
     }
+    
+
 
 }
 

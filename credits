@@ -50,6 +50,10 @@ https://www.w3schools.com/js/js_api_fetch.asp
 https://developer.mozilla.org/en-US/docs/Web/API/URL_API/Resolving_relative_references
 
 
+used in rebinding keys
+https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+
+
 notes to self
 ---
 there'll probably be a need for some kind of stages system 

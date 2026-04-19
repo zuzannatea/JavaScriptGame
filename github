@@ -15,6 +15,7 @@ EXTTRA
 - move player into GameManager
 - add UI screen progression w css
 
+- add stat boosts into cheats 
 
 fixed:
-- Made the game paused until play is pressed
+- Redid keybinds 

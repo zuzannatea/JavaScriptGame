@@ -33,17 +33,17 @@ let COLLIDER_TILES = [TileType.wall];
 
 let xhttp;
 
-let keybinds = {
-    " " : {target : "player", action : "isAttacking"},
-    "ArrowLeft" : {target : "player", action : "moveLeft"},
-    "ArrowUp" : {target : "player", action : "moveUp"},
-    "ArrowRight" : {target : "player", action : "moveRight"},
-    "ArrowDown" : {target : "player", action : "moveDown"},
-    "q" : {target : "player", action : "specialMove"},
-    "Q" : {target : "player", action : "specialMoveModifier"},
-    "f" : {target : "game", action : "running"}
+let actions = {
+    isAttacking : {target : "player"},
+    moveLeft : {target : "player"},
+    moveUp : {target : "player"},
+    moveRight : {target : "player"},
+    moveDown : {target : "player"},
+    specialMove : {target : "player"},
+    specialMoveModifier : {target : "player"},
+    running : { target : "global"}
+};
 
-}
 
 class GameManager{
     constructor(){
@@ -53,48 +53,80 @@ class GameManager{
         this.final_level_id = 1;
         this.stat_boosts = [];
         this.exit_tiles;
-        this.ui_manager = new UIManager();
 
         this.running = false;
 		this.pause_cooldown = 0;
 		this.pressedKeys = new Set();
+        this.keybinds = {
+            isAttacking: [" "],
+            moveLeft: ["ArrowLeft"],
+            moveUp: ["ArrowUp"],
+            moveRight: ["ArrowRight"],
+            moveDown: ["ArrowDown"],
+            specialMove: ["q"],
+            specialMoveModifier: ["Q"],
+            running: ["f"]
+        }
 
+        this.key_to_action = this.rebuild_keymap();
+        this.ui_manager = new UIManager(this.keybinds);
+
+    }
+    rebuild_keymap(){
+        let key_to_action = {};
+        for (let action in this.keybinds){
+            for (let key of this.keybinds[action]){
+                key_to_action[key] = action;
+            }
+        }
+        console.log(key_to_action);
+        this.key_to_action = key_to_action;
+        return key_to_action;
     }
     handle_key_presses(key){
-        if (keybinds[key]){
-            if (keybinds[key].target === "global"){
-                this.pressedKeys.add(keybinds[key].action);
-                this.player.handle_key_presses(key);
-                return;
-            }
-            if (keybinds[key].target === "player"){
-                this.player.handle_key_presses(key);
-                return;
-            }
-            if (keybinds[key].target === "game"){
-                this.pressedKeys.add(keybinds[key].action);
-                return;
-            }
+        let action = this.key_to_action[key];
+        if (!action) return;
+        let meta = actions[action];
+        if (!meta) return;
 
+        if (meta.target === "global") {
+            this.pressedKeys.add(action);
+            this.player.handle_key_presses(action);
+            return;
         }
+
+        if (meta.target === "player") {
+            this.player.handle_key_presses(action);
+            return;
+        }
+
+        if (meta.target === "game") {
+            this.pressedKeys.add(action);
+            return;
+        }
+
+        
     }
     handle_key_releases(key){
-        if (keybinds[key]){
-            if (keybinds[key].target === "global"){
-                this.player.handle_key_releases(key);
-                this.pressedKeys.delete(keybinds[key].action);
-                return;
-            }
+        let action = this.key_to_action[key];
+        if (!action) return;
+        let meta = actions[action];
+        if (!meta) return;
 
-            if (keybinds[key].target === "player"){
-                this.player.handle_key_releases(key);
-                return;
-            }
-            if (keybinds[key].target === "game"){
-                this.pressedKeys.delete(keybinds[key].action);
-                return;
-            }
+        if (meta.target === "global") {
+            this.pressedKeys.delete(action);
+            this.player.handle_key_releases(action);
+            return;
+        }
 
+        if (meta.target === "player") {
+            this.player.handle_key_releases(action);
+            return;
+        }
+
+        if (meta.target === "game") {
+            this.pressedKeys.delete(action);
+            return;
         }
 
     }
@@ -189,11 +221,19 @@ class GameManager{
         this.draw_enemies(context);
         this.draw_stat_boosts(context);
     }
+    check_ui(){
+        if (this.ui_manager.changed_rebind){
+            this.ui_manager.changed_rebind = false;
+            this.keybinds = this.ui_manager.keybinds;
+            this.rebuild_keymap();
+        }
+    }
     update(){
         if (this.ui_manager.ready === true){
             this.running = true;
             this.ui_manager.ready = false;
         }
+        this.check_ui();
 		this.pause_cooldown = Math.max(this.pause_cooldown - 1,0);
 		if (this.pause_cooldown <= 0){
 			if (this.pressedKeys.has("running")){
@@ -648,4 +688,4 @@ class Level{
     }
 }
 
-export { GameManager, TILE_SIZE, COLLIDER_TILES, keybinds };
+export { GameManager, TILE_SIZE, COLLIDER_TILES };
