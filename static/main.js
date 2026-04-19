@@ -31,6 +31,7 @@ function init(){
     game_manager.construct_game(context);
     game_manager.draw(context);
     draw();
+    
     window.addEventListener("keydown",activate,false);
     window.addEventListener("keyup",deactivate,false);
 
@@ -58,6 +59,10 @@ function draw(){
 
 
 function activate(event){
+    if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+        return;
+    }
+
     event.preventDefault();
     game_manager.handle_key_presses(event.key);
 }

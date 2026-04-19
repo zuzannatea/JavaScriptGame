@@ -10,7 +10,21 @@ TODO
 
 EXTTRA
 - add stat boosts into cheats 
-- actually implement cheats bruh
+- improve special moves
 - add finishing screen
+- do more tile tyoes 
+- add css
+
+- add tilesets 
+- add sprites w animations 
+- add sfx manager for sounds 
 
 fixed:
+- Made end screen 
+- Created rules.html and profile.html 
+- Added sfx.js
+- Changed tile drawing 
+- Fixed typing in number fields 
+- Added CSS 
+- Changed base.html 
+

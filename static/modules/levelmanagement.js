@@ -26,7 +26,9 @@ const level_details = {
 }
 const TileType = {
     wall : "red",
-    floor : "green"
+    floor : "green",
+    portal : "pink",
+    warning : "brown"
 }
 let TILE_SIZE = 32;
 let COLLIDER_TILES = [TileType.wall];
@@ -130,7 +132,7 @@ class GameManager{
         }
 
     }
-    stop(){
+    end(){
         let data = new FormData();
         data.append("score",this.player.score);
         xhttp = new XMLHttpRequest();
@@ -138,7 +140,9 @@ class GameManager{
         xhttp.open("POST", "/store_result", true);
         xhttp.send(data);
 
-        stopGame();
+
+        this.ui_manager.end_game(this.player.score);
+        //stopGame();
     }
     handle_response() {
         if ( xhttp.readyState === 4 ) {
@@ -184,7 +188,7 @@ class GameManager{
         this.player.curr_health = this.player.max_health;
         if (this.current_level.id === this.final_level_id){
             console.log("Done");
-            this.stop();
+            this.end();
             return;
         }
         let new_level_id = this.current_level.id + 1;
@@ -245,6 +249,11 @@ class GameManager{
         }
     }
     update(){
+        if (this.player.curr_health <= 0){
+            this.end();
+            return;
+
+        }
         if (this.ui_manager.ready === true){
             this.running = true;
             this.ui_manager.ready = false;
@@ -373,6 +382,9 @@ class Level{
         console.log(possible_choice_in_tiles);
 		let chosen = choose(possible_choice_in_tiles);
         console.log(chosen);
+        this.map[chosen.y][chosen.x1] = TileType.portal;
+        this.map[chosen.y][chosen.x2] = TileType.portal;
+        
         this.exit = {x1 : chosen.x1, x2 : chosen.x2, y : chosen.y}
         return this.exit;
     }
@@ -466,6 +478,7 @@ class Level{
     update_warning_tiles(){
         for (let tile of this.warning_tiles){
             if (tile.timestamp - Date.now() < 0){
+                this.map[tile.x][tile.y] = TileType.floor;
                 this.warning_tiles = remove_item(tile, this.warning_tiles);
             }
         }
@@ -476,6 +489,7 @@ class Level{
             y : y,
             timestamp : timestamp
         });
+        this.map[x][y] = TileType.warning;
         return;
     }
 
@@ -501,24 +515,7 @@ class Level{
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
             for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
-                context.fillStyle = this.map[r][c] === TileType.floor ? "green" : "red";
-                let player_tiles = this.player.get_current_tiles();
-                for (let tile of player_tiles){
-                    if (r === tile[0] && c === tile[1]){
-                        context.fillStyle = "purple";
-                    }
-                }
-                for (let warning of this.warning_tiles){
-                    if (r === warning.x && c === warning.y){
-                        context.fillStyle = "brown";
-                    }
-                }
-                if (this.exit){
-                    if ((c === this.exit.x1 || c === this.exit.x2) && r === this.exit.y){
-                        context.fillStyle = "pink";
-                        //console.log(this.get_tile(r,c));
-                    }
-                }
+                context.fillStyle = this.map[r][c];
                 context.fillRect((r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }

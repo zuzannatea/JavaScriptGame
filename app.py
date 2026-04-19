@@ -144,6 +144,13 @@ def leaderboard():
                         LIMIT 10;""").fetchall()
     return render_template("leaderboard.html", results=results)
 
-@app.route("/log_cheat_usage", methods=["POST"])
-def log_cheat_usage():
-    pass
+@app.route("/profile", methods=["POST","GET"])
+@login_required
+def profile():
+    db = get_db()
+    results = db.execute("""SELECT user_id,score
+                        FROM past_games
+                        WHERE user_id = ?
+                        ORDER BY score DESC;""", (g.user,)).fetchall()
+    return render_template("profile.html", results=results)
+

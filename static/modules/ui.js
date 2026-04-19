@@ -54,12 +54,19 @@ class UIManager{
             console.log(response);
             if (response.ok){
                 const data = await response.json();
-                let p1 = document.querySelector("header p:first-child");
+                let ps = document.querySelectorAll("header p");
+                ps[0].innerHTML = data.user_id;
+                ps[2].firstElementChild.innerHTML = "Logout";
+                ps[2].firstElementChild.href = "{{ url_for('logout') }}";
+                ps[1].firstElementChild.innerHTML = "Leaderboard";
+                ps[1].firstElementChild.href = "{{ url_for('leaderboard') }}";
+
+/*                 let p1 = document.querySelector("header p:first-child");
                 let p2_a = document.querySelector("header p:last-child a");
                 p1.innerHTML = data.user_id;
                 p2_a.innerHTML = "Logout";
                 p2_a.href = "{{ url_for('logout') }}";
-
+ */
                 this.progress();
                 return true;
             }
@@ -117,9 +124,17 @@ class UIManager{
         input.type = "number";
         input.min = "0";
         input.id = id;
-        button.id = "button"-id;
+        button.id = "button-"+id;
         button.innerHTML = "Apply";
         label.innerHTML = id;
+        button.addEventListener("click", () => {
+            let value = Number(input.value) || 0;
+            if (value > 0) {
+                this.cheats.set_score = value;
+                this.cheats.on = true;
+            }
+        });
+
         label.appendChild(input);
         label.appendChild(button);
         return label;
@@ -168,7 +183,7 @@ class UIManager{
         this.html_overlay.style.display = "none";
     }
     show_screen(){
-        this.html_overlay.style.display = "block";
+        this.html_overlay.style.display = "flex";
     }
     pause_game(){
         this.show_screen();
@@ -186,7 +201,7 @@ class UIManager{
     }
     create_sign_in_screen(){
         let p1 = document.querySelector("header p:first-child a");
-        if (!p1){
+        if (!(p1.innerHTML==="Leaderboard")){
             this.progress();
             return;
         }
@@ -306,13 +321,6 @@ class UIManager{
             this.cheats.kill_aura = e.target.checked;
             this.cheats.on = true;
         });
-        document.getElementById("score").addEventListener("click", () => {
-            let score = Number(document.getElementById("score").value) || 0;
-            if (score > 0){
-                this.cheats.set_score = score;
-                this.cheats.on = true;
-            }
-        });
         this.html_overlay.addEventListener("change", e => {
             if (e.target.matches('input[type="radio"]')) {
                 const { name, value } = e.target;
@@ -324,10 +332,28 @@ class UIManager{
         });
     }
 
-    create_end_screen(){
+    end_game(score){
+        if (this.html_overlay.hasChildNodes()){
+            return;
+        }
+        else{
+            this.create_end_screen(score);
+        }
+    }
+    create_end_screen(score){
+        this.reset_screen();
+        this.show_screen();
+
+        let header = document.createElement("h3");
+        header.innerHTML = "The End!"
+        let text = document.createElement("p");
+        text.innerHTML = "You finished with a score of "+score;
+        this.html_overlay.appendChild(header);
+        this.html_overlay.appendChild(text);
+        let restart = this.create_button_with_link("Restart", "");
+        let leaderboard = this.create_button_with_link("See leaderboard", "leaderboard");
 
     }
-    
 
 
 }
