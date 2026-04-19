@@ -117,7 +117,7 @@ class UIManager{
         input.type = "number";
         input.min = "0";
         input.id = id;
-        button.id = id;
+        button.id = "button"-id;
         button.innerHTML = "Apply";
         label.innerHTML = id;
         label.appendChild(input);
@@ -201,6 +201,7 @@ class UIManager{
     }
     resume_functionality(){
         this.ready = true;
+        this.resume_game();
     }
     create_pause_screen(){
         this.reset_screen();
@@ -295,7 +296,7 @@ class UIManager{
     create_cheats_screen(){
         this.reset_screen();
         let goBack = this.create_button_with_event_listener("Go back", "create_pause_screen");
-        
+
         this.create_cheats_console();
         document.getElementById("invincibility").addEventListener("change", e => {
             this.cheats.invincibility = e.target.checked;
@@ -308,15 +309,17 @@ class UIManager{
         document.getElementById("score").addEventListener("click", () => {
             let score = Number(document.getElementById("score").value) || 0;
             if (score > 0){
-                this.cheats.score = score;
+                this.cheats.set_score = score;
                 this.cheats.on = true;
             }
         });
         this.html_overlay.addEventListener("change", e => {
             if (e.target.matches('input[type="radio"]')) {
                 const { name, value } = e.target;
+                console.log(name, value);
                 this.cheats.boosts[name] = Number(value);
                 this.cheats.on = true;
+                console.log(this.cheats);
             }
         });
     }

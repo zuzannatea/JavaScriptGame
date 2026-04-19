@@ -227,6 +227,22 @@ class GameManager{
             this.keybinds = this.ui_manager.keybinds;
             this.rebuild_keymap();
         }
+        if (this.ui_manager.cheats.on){
+            console.log("updating cheats");
+            this.ui_manager.cheats.on = false;
+            this.player.kill_aura = this.ui_manager.cheats.kill_aura;
+            this.player.invincibility = this.ui_manager.cheats.invincibility;
+            if (this.ui_manager.cheats.set_score){
+                console.log(this.ui_manager.cheats.set_score);
+                this.player.score = this.ui_manager.cheats.set_score;
+            }
+            for (let boost in this.ui_manager.cheats.boosts){
+                if (this.ui_manager.cheats.boosts[boost]){
+                    console.log(this.ui_manager.cheats.boosts[boost], boost);
+                    this.player.ability_manager.set_level(boost, this.ui_manager.cheats.boosts[boost]);
+                }
+            }
+        }
     }
     update(){
         if (this.ui_manager.ready === true){

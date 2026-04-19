@@ -708,6 +708,8 @@ class Player extends Entity{
 		this.shortQTap = false;
 
 
+		this.invincibility = false;
+		this.kill_aura = false; 
 		this.invulnerability = false;
 		this.invulnerability_timestamp;
 		this.speeding_timestamp;
@@ -737,6 +739,7 @@ class Player extends Entity{
 	}
 	take_damage(amount=10){
 		if (this.invulnerability){return;}
+		if (this.invincibility){return;}
 
 		if (Date.now() - this.last_attack < 750 || this.curr_health <= 0){
 			return;
@@ -797,7 +800,7 @@ class Player extends Entity{
 		if (this.pressedKeys.has("moveDown")){
 			this.try_move(0,this.speed);
 		}
-		if (this.pressedKeys.has("isAttacking")){
+		if (this.pressedKeys.has("isAttacking") || this.kill_aura){
 			this.attack();
 		}
 
@@ -869,7 +872,11 @@ class Player extends Entity{
 class AbilityManager{
 	constructor(player){
 		this.player = player;
-		this.all_abilities = [Smash, Roll, Charge];
+		this.all_abilities = {
+			smash : Smash,
+			roll : Roll,
+			charge : Charge
+		};
 		this.current_abilities = {
 			smash : 0, 
 			roll : 0, 
@@ -877,9 +884,10 @@ class AbilityManager{
 		};
 	}
 	gain_ability(name){
-		if (this.current_abilities[name]){
+		if (name in this.current_abilities){
 			if (this.current_abilities[name] === 0){
-				this.current_abilities[name] = new name(this.player);
+				let construct = this.all_abilities[name];
+				this.current_abilities[name] = new construct(this.player);
 				return true;
 			}
 		}
@@ -905,6 +913,18 @@ class AbilityManager{
 			}
 		}
 	}
+	set_level(name,level){
+		if (name in this.current_abilities && level > 0 && level <= 3){
+			if (this.current_abilities[name]){
+				this.current_abilities[name].set_level(level);
+			}
+			else{
+				this.gain_ability(name);
+				this.current_abilities[name].set_level(level);
+
+			}
+		}
+	}
 }
 
 class Ability{
@@ -916,12 +936,16 @@ class Ability{
 		this.levels = {}
 	}
 	use(){
+		console.log("Used",this,this.level);
 		this[this.levels[this.level]]();
 	}
 	level_up(){
 		if (this.level < this.max_level){
 			this.level = this.level + 1;
 		}
+	}
+	set_level(lvl){
+		this.level = lvl;
 	}
 }
 

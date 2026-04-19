@@ -7,15 +7,10 @@ TODO
 
 TODO
 - add on-screen UI player stats
-- add pause screen
-- finish screen progression
 
 EXTTRA
-- add a cheats console
-- move player into GameManager
-- add UI screen progression w css
-
 - add stat boosts into cheats 
+- actually implement cheats bruh
+- add finishing screen
 
 fixed:
-- Redid keybinds 
