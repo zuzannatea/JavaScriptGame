@@ -34,14 +34,14 @@ let COLLIDER_TILES = [TileType.wall];
 let xhttp;
 
 let keybinds = {
-    " " : "isAttacking",
-    "ArrowLeft" : "moveLeft",
-    "ArrowUp" : "moveUp",
-    "ArrowRight" : "moveRight",
-    "ArrowDown" : "moveDown",
-    "q" : "specialMove",
-    "Q" : "specialMoveModifier",
-    "f" : "running"
+    " " : {target : "player", action : "isAttacking"},
+    "ArrowLeft" : {target : "player", action : "moveLeft"},
+    "ArrowUp" : {target : "player", action : "moveUp"},
+    "ArrowRight" : {target : "player", action : "moveRight"},
+    "ArrowDown" : {target : "player", action : "moveDown"},
+    "q" : {target : "player", action : "specialMove"},
+    "Q" : {target : "player", action : "specialMoveModifier"},
+    "f" : {target : "game", action : "running"}
 
 }
 
@@ -54,30 +54,46 @@ class GameManager{
         this.stat_boosts = [];
         this.exit_tiles;
         this.ui_manager = new UIManager();
+
+        this.running = true;
+		this.pause_cooldown = 0;
+		this.pressedKeys = new Set();
+
     }
     handle_key_presses(key){
         if (keybinds[key]){
-            if (key === "q" && !this.player.pressedKeys.has("specialMove")){
-                this.player.keyPressTimer = Date.now();
+            if (keybinds[key].target === "global"){
+                this.pressedKeys.add(keybinds[key].action);
+                this.player.handle_key_presses(key);
+                return;
             }
-            this.player.pressedKeys.add(keybinds[key]);
-                //player[keybinds[key]] = true;
+            if (keybinds[key].target === "player"){
+                this.player.handle_key_presses(key);
+                return;
+            }
+            if (keybinds[key].target === "game"){
+                this.pressedKeys.add(keybinds[key].action);
+                return;
+            }
+
         }
     }
     handle_key_releases(key){
         if (keybinds[key]){
-            //player[keybinds[key]] = false;
-            if (key === "q"){
-                console.log(Date.now()-this.player.keyPressTimer);
-                if (Date.now()-this.player.keyPressTimer < 850){
-                    this.player.shortQTap = true;
-                }
-                else{
-                    this.player.longQTap = true;
-                }
-                this.player.keyPressTimer = 0;
+            if (keybinds[key].target === "global"){
+                this.player.handle_key_releases(key);
+                this.pressedKeys.delete(keybinds[key].action);
+                return;
             }
-            this.player.pressedKeys.delete(keybinds[key]);
+
+            if (keybinds[key].target === "player"){
+                this.player.handle_key_releases(key);
+                return;
+            }
+            if (keybinds[key].target === "game"){
+                this.pressedKeys.delete(keybinds[key].action);
+                return;
+            }
 
         }
 
@@ -169,13 +185,37 @@ class GameManager{
     }
     draw(context){
         this.current_level.draw(context);
+        this.player.draw(context);
         this.draw_enemies(context);
         this.draw_stat_boosts(context);
     }
     update(){
+/*         if (this.ui_manager.ready === true){
+            this.running = true;
+        }
+ */		this.pause_cooldown = Math.max(this.pause_cooldown - 1,0);
+		if (this.pause_cooldown <= 0){
+			if (this.pressedKeys.has("running")){
+				this.running = !this.running;
+				this.pause_cooldown = 5;
+                if (!this.running){
+                    this.ui_manager.pause_game();
+                }
+                else{
+                    this.ui_manager.resume_game();
+                }
+
+			}
+		}
+
+        if (!this.running){return;}
+        this.update_player();
         this.check_progression();
         this.update_enemies();
         this.update_stat_boosts();
+    }
+    update_player(){
+        this.player.update();
     }
     update_stat_boosts(){
         let to_be_removed = []
@@ -395,8 +435,11 @@ class Level{
 
         let player_tiles = this.player.get_current_tiles();
         let [y,x] = player_tiles[0];
+        //console.log("RAN HERE AT LEAST TOO");
+
         if (dist(this.player_pos, this.player) > TILE_SIZE*2){
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
+            //console.log("RAN HERE TOO");
             this.player_pos = {x : this.player.x, y : this.player.y};
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
@@ -604,4 +647,4 @@ class Level{
     }
 }
 
-export { GameManager, TILE_SIZE, COLLIDER_TILES };
+export { GameManager, TILE_SIZE, COLLIDER_TILES, keybinds };

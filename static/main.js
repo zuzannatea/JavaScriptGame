@@ -29,7 +29,7 @@ function init(){
     //player = new Player();
 
     game_manager.construct_game(context);
-
+    game_manager.draw(context);
     draw();
     window.addEventListener("keydown",activate,false);
     window.addEventListener("keyup",deactivate,false);
@@ -45,14 +45,12 @@ function draw(){
         return;
     }
     then = now - (elapsed % fpsInterval);
-    game_manager.player.update();
-    if (game_manager.player.running){
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        
-        game_manager.draw(context);
-        game_manager.update();
+    game_manager.update();
 
-        game_manager.player.draw(context);
+    if (game_manager.running){
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        game_manager.draw(context);
+
     }
 
 }
@@ -60,37 +58,11 @@ function draw(){
 
 
 function activate(event){
-    let key = event.key;
-    
     event.preventDefault();
-    game_manager.handle_key_presses(key);
-/*     if (keybinds[key]){
-        if (key === "q" && !player.pressedKeys.has("specialMove")){
-            player.keyPressTimer = Date.now();
-        }
-        player.pressedKeys.add(keybinds[key]);
-            //player[keybinds[key]] = true;
-    }
- */}
+    game_manager.handle_key_presses(event.key);
+}
 function deactivate(event){
-    let key = event.key;
-    game_manager.handle_key_releases(key);
-/*     if (keybinds[key]){
-        //player[keybinds[key]] = false;
-        if (key === "q"){
-            console.log(Date.now()-player.keyPressTimer);
-            if (Date.now()-player.keyPressTimer < 850){
-                player.shortQTap = true;
-            }
-            else{
-                player.longQTap = true;
-            }
-            player.keyPressTimer = 0;
-        }
-        player.pressedKeys.delete(keybinds[key]);
-
-    }
- */
+    game_manager.handle_key_releases(event.key);
 }
 
 function stop(){

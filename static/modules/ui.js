@@ -12,6 +12,7 @@ class UIManager{
         this.current_ui_state_index = 0;
         this.html_overlay = document.getElementById("html-overlay");
         this.create_start_screen();
+        this.ready = false;
     }
     progress(){
         if (this.current_ui_state_index != this.max_ui_state_index){
@@ -19,7 +20,10 @@ class UIManager{
         }
         this.reset_screen();
         this["create_"+this.ui_states[this.current_ui_state_index]]();
-
+        if (this.current_ui_state_index === 3){
+            this.ready = true;
+        }
+        return;
     }
     async continue_as_guest(){
         try {
@@ -78,7 +82,15 @@ class UIManager{
     }
     show_screen(){
         this.html_overlay.style.display = "block";
-
+    }
+    pause_game(){
+        this.show_screen();
+        this.create_pause_screen();
+        return;
+    }
+    resume_game(){
+        this.reset_screen();
+        this.hide_screen();
     }
     create_start_screen(){
         let startButton = this.create_button_with_event_listener("Start", "progress");
@@ -101,11 +113,13 @@ class UIManager{
         this.hide_screen();
     }
     create_pause_screen(){
-
+        let signInButton = this.create_button_with_event_listener("Play", "progress");
     }
+    
     create_end_screen(){
 
     }
+
 }
 
 export { UIManager };

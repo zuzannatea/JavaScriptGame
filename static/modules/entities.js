@@ -1,5 +1,5 @@
 import { canvas, game_manager, player } from "../main.js";
-import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
+import {TILE_SIZE, COLLIDER_TILES, keybinds} from "./levelmanagement.js";
 import {dist as calcDist,randint, choose, is_colliding} from "./utils.js";
 
 
@@ -704,11 +704,9 @@ class Player extends Entity{
 
 		this.keyPressTimer;
 		this.cooldown = 0; 
-		this.pauseCooldown = 0;
 		this.longQTap = false;
 		this.shortQTap = false;
 
-		this.running = true;
 
 		this.invulnerability = false;
 		this.invulnerability_timestamp;
@@ -716,6 +714,26 @@ class Player extends Entity{
 
 		this.colour = "cyan";
 	
+	}
+	handle_key_presses(key){
+        if (key === "q" && !this.pressedKeys.has("specialMove")){
+            this.keyPressTimer = Date.now();
+        }
+		this.pressedKeys.add(keybinds[key].action);
+		return;
+	}
+	handle_key_releases(key){
+		if (key === "q"){
+			if (Date.now()-this.keyPressTimer < 850){
+				this.shortQTap = true;
+			}
+			else{
+				this.longQTap = true;
+			}
+			this.keyPressTimer = 0;
+		}
+		this.pressedKeys.delete(keybinds[key].action);
+		return;
 	}
 	take_damage(amount=10){
 		if (this.invulnerability){return;}
@@ -763,17 +781,8 @@ class Player extends Entity{
 
 
 	update(){
+		//console.log("RUNS PLAYER");
 		this.check_abilities();
-		this.pauseCooldown = Math.max(this.pauseCooldown - 1,0);
-		if (this.pauseCooldown <= 0){
-			if (this.pressedKeys.has("running")){
-				this.running = !this.running;
-				this.pauseCooldown = 5;
-			}
-		}
-		if (!this.running){
-			return;
-		}
 		this.cooldown = Math.max(this.cooldown - 1,0);
 
 		if (this.pressedKeys.has("moveRight")){
