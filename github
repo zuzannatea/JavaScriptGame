@@ -17,8 +17,4 @@ EXTTRA
 
 
 fixed:
-- Fully moved controls into GameManager class 
-- Modified keybinds object 
-- Added basic pause screen and pause screen functionalities 
-- Added pause_game() and resume_game() into UIManager class 
-- Restructured main.js 
+- Made the game paused until play is pressed

@@ -13,6 +13,17 @@ class UIManager{
         this.html_overlay = document.getElementById("html-overlay");
         this.create_start_screen();
         this.ready = false;
+        this.cheats = {
+            on : false,
+            kill_aura : false,
+            invincibility : false, 
+            set_score : null, 
+            boosts : {
+                smash : null,
+                roll : null,
+                charge : null
+            }
+        }
     }
     progress(){
         if (this.current_ui_state_index != this.max_ui_state_index){
@@ -72,6 +83,74 @@ class UIManager{
         return button;
 
     }
+    create_cheats_console(){
+        let console = document.createElement("div");
+        console.id = "cheats-console";
+        let invincibility = this.create_checkbox("invincibility");
+        let kill_aura = this.create_checkbox("kill-aura");
+        let smash = this.create_multicheckbox_field("smash");
+        let roll = this.create_multicheckbox_field("roll");
+        let charge = this.create_multicheckbox_field("charge");
+        let score = this.create_number_field("score");
+        console.appendChild(invincibility);
+        console.appendChild(document.createElement("br"));
+        console.appendChild(kill_aura);
+        console.appendChild(document.createElement("br"));
+        console.appendChild(smash);
+        console.appendChild(roll);
+        console.appendChild(charge);
+        console.appendChild(score);
+        this.html_overlay.appendChild(console);
+    }
+    create_number_field(id){
+        let label = document.createElement("label");
+        let input = document.createElement("input");
+        let button = document.createElement("button");
+        input.type = "number";
+        input.min = "0";
+        input.id = id;
+        button.id = id;
+        button.innerHTML = "Apply";
+        label.innerHTML = id;
+        label.appendChild(input);
+        label.appendChild(button);
+        return label;
+
+    }
+    create_multicheckbox_field(name){
+        let containing_div = document.createElement("div");
+        containing_div.id = name+"-container";
+        let p = document.createElement("p");
+        p.innerHTML = name;
+        let label1 = this.create_radio(name,"1");
+        let label2 = this.create_radio(name,"2");
+        let label3 = this.create_radio(name,"3");
+        containing_div.appendChild(p);
+        containing_div.appendChild(label1);
+        containing_div.appendChild(label2);
+        containing_div.appendChild(label3);
+        return containing_div;
+    }
+    create_radio(name,id){
+        let label = document.createElement("label");
+        let input = document.createElement("input");
+        input.type = "radio";
+        input.id = name+"-"+id;
+        input.name = name;
+        input.value = id;
+        label.innerHTML = id;
+        label.appendChild(input);
+        return label;
+    }
+    create_checkbox(id){
+        let label = document.createElement("label");
+        let input = document.createElement("input");
+        input.type = "checkbox";
+        input.id = id;
+        label.innerHTML = id;
+        label.appendChild(input);
+        return label;
+    }
     reset_screen(){
         while (this.html_overlay.hasChildNodes()) {
             this.html_overlay.removeChild(this.html_overlay.firstChild);
@@ -112,11 +191,50 @@ class UIManager{
     create_game_screen(){
         this.hide_screen();
     }
+    resume_functionality(){
+        this.ready = true;
+    }
     create_pause_screen(){
-        let signInButton = this.create_button_with_event_listener("Play", "progress");
+        let resumeButton = this.create_button_with_event_listener("Resume", "resume_functionality");
+        let settingsButton = this.create_button_with_event_listener("Settings", "create_settings_screen");
+        let cheatsButton = this.create_button_with_event_listener("Cheats", "create_cheats_screen");
+        let rulesButton = this.create_button_with_link("Rules", "login");
+        let creditsButton = this.create_button_with_link("Credits", "login");
     }
     
     create_end_screen(){
+
+    }
+    create_settings_screen(){
+        this.reset_screen();
+    }
+    create_cheats_screen(){
+        this.reset_screen();
+        this.create_cheats_console();
+        document.getElementById("invincibility").addEventListener("change", e => {
+            this.cheats.invincibility = e.target.checked;
+            this.cheats.on = true;
+        });
+        document.getElementById("kill-aura").addEventListener("change", e => {
+            this.cheats.kill_aura = e.target.checked;
+            this.cheats.on = true;
+        });
+        document.getElementById("score").addEventListener("click", () => {
+            let score = Number(document.getElementById("score").value) || 0;
+            if (score > 0){
+                this.cheats.score = score;
+                this.cheats.on = true;
+            }
+        });
+        this.html_overlay.addEventListener("change", e => {
+            if (e.target.matches('input[type="radio"]')) {
+                const { name, value } = e.target;
+                this.cheats.boosts[name] = Number(value);
+                this.cheats.on = true;
+            }
+        });
+
+
 
     }
 

@@ -55,7 +55,7 @@ class GameManager{
         this.exit_tiles;
         this.ui_manager = new UIManager();
 
-        this.running = true;
+        this.running = false;
 		this.pause_cooldown = 0;
 		this.pressedKeys = new Set();
 
@@ -190,10 +190,11 @@ class GameManager{
         this.draw_stat_boosts(context);
     }
     update(){
-/*         if (this.ui_manager.ready === true){
+        if (this.ui_manager.ready === true){
             this.running = true;
+            this.ui_manager.ready = false;
         }
- */		this.pause_cooldown = Math.max(this.pause_cooldown - 1,0);
+		this.pause_cooldown = Math.max(this.pause_cooldown - 1,0);
 		if (this.pause_cooldown <= 0){
 			if (this.pressedKeys.has("running")){
 				this.running = !this.running;
