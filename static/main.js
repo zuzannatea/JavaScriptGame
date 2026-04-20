@@ -5,7 +5,7 @@ let canvas;
 let context;
 let request;
 
-let fpsInterval = 100 / 30;
+let fpsInterval = 1000 / 30;
 let then = Date.now();
 
 let player;

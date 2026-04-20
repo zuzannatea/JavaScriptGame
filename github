@@ -3,7 +3,7 @@ TODO
 - add slight player offset for Swarmer? and/or improve entity collision 
 - fix boost spawning so its not in the same place of the tile but center
 - fix game crashing when entity collision
-
+- fix issue w absolute link
 
 TODO
 - add on-screen UI player stats
@@ -11,20 +11,9 @@ TODO
 EXTTRA
 - add stat boosts into cheats 
 - improve special moves
-- add finishing screen
-- do more tile tyoes 
-- add css
 
 - add tilesets 
 - add sprites w animations 
 - add sfx manager for sounds 
 
 fixed:
-- Made end screen 
-- Created rules.html and profile.html 
-- Added sfx.js
-- Changed tile drawing 
-- Fixed typing in number fields 
-- Added CSS 
-- Changed base.html 
-

@@ -38,4 +38,31 @@ function is_colliding(object1, object2){
 	}
 }
 
-export {dist,randint,wait,choose, remove_item, is_colliding}
+function load_assets(assets, callback){
+	console.log(assets);
+    let num_assets = assets.length;
+    let loaded = function(){
+        console.log("loaded");
+        num_assets = num_assets - 1;
+        if (num_assets === 0){
+            callback();
+        }
+    };
+    for (let asset of assets){
+		console.log(asset);
+        let element = asset.var;
+        if(element instanceof HTMLImageElement){
+            console.log("img");
+            element.addEventListener("load", loaded, false);
+
+        }
+        else if(element instanceof HTMLAudioElement){
+            console.log("audio");
+            element.addEventListener("canplaythrough", loaded, false);
+
+        }
+        element.src = asset.url;
+    }
+}
+
+export {dist,randint,wait,choose, remove_item, is_colliding, load_assets}

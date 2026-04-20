@@ -31,6 +31,7 @@ class UIManager{
                 charge : null
             }
         }
+        this.made_choice;
         
     }
     progress(){
@@ -196,8 +197,8 @@ class UIManager{
     }
     create_start_screen(){
         let startButton = this.create_button_with_event_listener("Start", "progress");
-        let rulesButton = this.create_button_with_link("Rules", "login");
-        let creditsButton = this.create_button_with_link("Credits", "login");
+        let rulesButton = this.create_button_with_link("Rules", "rules");
+        let creditsButton = this.create_button_with_link("Credits", "credits");
     }
     create_sign_in_screen(){
         let p1 = document.querySelector("header p:first-child a");
@@ -223,8 +224,8 @@ class UIManager{
         let resumeButton = this.create_button_with_event_listener("Resume", "resume_functionality");
         let settingsButton = this.create_button_with_event_listener("Settings", "create_settings_screen");
         let cheatsButton = this.create_button_with_event_listener("Cheats", "create_cheats_screen");
-        let rulesButton = this.create_button_with_link("Rules", "login");
-        let creditsButton = this.create_button_with_link("Credits", "login");
+        let rulesButton = this.create_button_with_link("Rules", "rules");
+        let creditsButton = this.create_button_with_link("Credits", "credits");
     }
     create_keybinds_console(){
         let prettified_keybinds = {
@@ -354,7 +355,60 @@ class UIManager{
         let leaderboard = this.create_button_with_link("See leaderboard", "leaderboard");
 
     }
+    create_choice_screen(ability_manager){
+        this.reset_screen();
+        this.show_screen();
 
+        let finished_abilities = [];
+        for (let ability in ability_manager.current_abilities){
+            if (ability_manager.current_abilities[ability].level === ability_manager.current_abilities[ability].max_level){
+                finished_abilities.push(ability);
+            }
+        }
+        let header = document.createElement("h3");
+        header.innerHTML = "You progressed to the next level!"
+
+        let text = document.createElement("p");
+        text.innerHTML = "Pick which ability you'd like to upgrade:";
+
+        this.html_overlay.appendChild(header);
+        this.html_overlay.appendChild(text);
+
+        let name = "choice";
+        for (let ability in ability_manager.current_abilities){
+            console.log("AB",!(ability in finished_abilities), finished_abilities);
+            if (!(ability in finished_abilities)){
+                let label = this.create_radio(name,ability);
+                this.html_overlay.appendChild(label);
+            }
+        }
+        let button = document.createElement("button");
+        button.innerHTML = "Continue";
+        this.html_overlay.appendChild(button);
+
+        let result = {}
+        this.html_overlay.addEventListener("change", e => {
+            if (e.target.matches('input[type="radio"]')) {
+                const { name, value } = e.target;
+                console.log(name, value);
+                result = {name : name, value : value};
+            }
+        });
+        button.addEventListener("click", () => {
+            this.made_choice = result;
+            this.hide_screen();
+
+        });
+    }
+/*     display_message(message){
+        let canvas = document.querySelector("canvas");
+        let context = canvas.getContext("2d");
+
+		context.font = "50px Arial";
+		context.fillStyle = "black";
+		context.fillText("Score: ",canvas.width/3,canvas.height/3);
+    }
+ */
 
 }
 

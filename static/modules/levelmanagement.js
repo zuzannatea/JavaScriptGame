@@ -1,6 +1,6 @@
 import { canvas, player, stop as stopGame } from "../main.js";
 import { Player, Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
-import { dist, remove_item, is_colliding, choose } from "./utils.js";
+import { dist, remove_item, is_colliding, choose, load_assets } from "./utils.js";
 import { UIManager } from "./ui.js";
 
 
@@ -24,11 +24,16 @@ const level_details = {
     }
 
 }
+
+let water_tile = new Image();
+let floor_tile = new Image();
+let portal_tile = new Image();
+let warning_tile = new Image();
 const TileType = {
-    wall : "red",
-    floor : "green",
-    portal : "pink",
-    warning : "brown"
+    wall : {img : water_tile, access : false},
+    floor : {img : floor_tile, access : true},
+    portal : {img : portal_tile, access : true},
+    warning : {img : warning_tile, access : true},
 }
 let TILE_SIZE = 32;
 let COLLIDER_TILES = [TileType.wall];
@@ -45,14 +50,14 @@ let actions = {
     specialMoveModifier : {target : "player"},
     running : { target : "global"}
 };
-
+function blank(){return;}
 
 class GameManager{
     constructor(){
         this.enemies = [];
         this.player = new Player();
         this.current_level = new Level(1, this.player);
-        this.final_level_id = 1;
+        this.final_level_id = 2;
         this.stat_boosts = [];
         this.exit_tiles;
 
@@ -72,6 +77,16 @@ class GameManager{
 
         this.key_to_action = this.rebuild_keymap();
         this.ui_manager = new UIManager(this.keybinds);
+
+        this.tile_frame_counter; 
+        load_assets([
+            {"var" : floor_tile, "url" : "static/assets/tiles/floor_tiles/green_quadruple_tile.png"},
+            {"var" : water_tile, "url" : "static/assets/tiles/water_tiles/water_tile1.png"},
+            {"var" : portal_tile, "url" : "static/assets/tiles/portal_tiles/portal_tile1.png"},
+            {"var" : warning_tile, "url" : "static/assets/tiles/floor_tiles/shiny_sandy_quadruple_tile.png"},
+            
+        ], blank)
+
 
     }
     rebuild_keymap(){
@@ -194,6 +209,7 @@ class GameManager{
         let new_level_id = this.current_level.id + 1;
         this.current_level = new Level(new_level_id, this.player);
         this.construct_game();
+        this.ui_manager.create_choice_screen(this.player.ability_manager);
         return;
     }
     construct_game(context){
@@ -226,6 +242,11 @@ class GameManager{
         this.draw_stat_boosts(context);
     }
     check_ui(){
+        if (this.ui_manager.made_choice){
+            //console.log(this.ui_manager.made_choice);
+            this.player.ability_manager.level_up(this.ui_manager.made_choice.value);
+            this.ui_manager.made_choice = null;
+        }
         if (this.ui_manager.changed_rebind){
             this.ui_manager.changed_rebind = false;
             this.keybinds = this.ui_manager.keybinds;
@@ -249,6 +270,7 @@ class GameManager{
         }
     }
     update(){
+        
         if (this.player.curr_health <= 0){
             this.end();
             return;
@@ -392,28 +414,28 @@ class Level{
         let adj_tiles = [];
         let type;
         if (row > 0){
-            type = String(this.map[row-1][col]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            type = this.map[row-1][col].access ? 1 : Number.MAX_SAFE_INTEGER; 
             adj_tiles.push({
                 tile : [row-1, col],
                 value : type
             });
         }
         if (row < this.map.length - 1){
-            type = String(this.map[row+1][col]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            type = this.map[row+1][col].access ? 1 : Number.MAX_SAFE_INTEGER; 
             adj_tiles.push({
                 tile : [row+1, col],
                 value : type
             });
         }
         if (col > 0){
-            type = String(this.map[row][col-1]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            type = this.map[row][col-1].access ? 1 : Number.MAX_SAFE_INTEGER; 
             adj_tiles.push({
                 tile : [row, col-1],
                 value : type
             });
         }
         if (col < this.map[0].length - 1){
-            type = String(this.map[row][col+1]) === "green" ? 1 : Number.MAX_SAFE_INTEGER; 
+            type = this.map[row][col+1].access ? 1 : Number.MAX_SAFE_INTEGER; 
             adj_tiles.push({
                 tile : [row, col+1],
                 value : type
@@ -427,7 +449,7 @@ class Level{
     get_shortest_path(source_tile, destination_tile){
         let [sourceX, sourceY] = source_tile;
         let [destX, destY] = destination_tile;
-        if (this.get_tile(destX, destY) === "red" || this.get_tile(sourceX,sourceY) === "red"){
+        if ((!this.get_tile(destX, destY).access) || (!this.get_tile(sourceX,sourceY).access)){
             console.log("No path");
             return -1;
         }
@@ -515,8 +537,8 @@ class Level{
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
             for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
-                context.fillStyle = this.map[r][c];
-                context.fillRect((r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                //context.fillStyle = this.map[r][c];
+                context.drawImage(this.map[r][c].img, (r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
 

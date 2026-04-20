@@ -102,7 +102,7 @@ class Entity{
 		let all_tiles = this.get_current_tiles();
 		let collisions = [];
 		for (let tile of all_tiles){
-			if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
+			if (!game_manager.current_level.get_tile(tile[0], tile[1]).access){
 				collisions.push({
 					x : tile[0],
 					y : tile[1],
@@ -160,7 +160,7 @@ class Enemy extends Entity{
 			tiles = this.get_current_tiles(point.x, point.y);
 			checker = true;
 			for (let tile of tiles){
-				if (game_manager.current_level.get_tile(tile[0],tile[1]) === "red"){
+				if (!game_manager.current_level.get_tile(tile[0],tile[1]).access){
 					checker = false;
 					continue;
 				}
@@ -299,7 +299,7 @@ class Enemy extends Entity{
 		let all_tiles = this.get_current_tiles();
 		let collisions = [];
 		for (let tile of all_tiles){
-			if (game_manager.current_level.get_tile(tile[0], tile[1]) === "red"){
+			if (!game_manager.current_level.get_tile(tile[0], tile[1]).access){
 				collisions.push({
 					x : tile[0],
 					y : tile[1],
@@ -316,8 +316,8 @@ class Enemy extends Entity{
 }
 
 class Zombie extends Enemy{
-	constructor(width, height) {
-		super(width, height);
+	constructor(width, height,player) {
+		super(width, height,player);
 
 		this.colour = "teal";
 	}
@@ -339,8 +339,8 @@ class Zombie extends Enemy{
 }
 
 class Swarmer extends Enemy{
-	constructor(width, height) {
-		super(width, height);
+	constructor(width, height,player) {
+		super(width, height,player);
 		this.speed = 3;
 		this.speed_modifier = 1.05;
 		this.base_speed = 3;
@@ -421,7 +421,7 @@ class Swarmer extends Enemy{
 		if (this.count_friends() < 1 && this.count_friends() > 0){
 			this.target = this.find_a_friend();
 		}
-		else if (this.count_friends() < 5){
+		else if (this.count_friends() < 3){
 			this.wander();
 		}
 		else{
@@ -437,8 +437,8 @@ class Swarmer extends Enemy{
 	}
 }
 class Charger extends Enemy{
-	constructor(width, height) {
-		super(width, height);
+	constructor(width, height,player) {
+		super(width, height,player);
 		this.speed = 1.5;
 		this.colour = "maroon";
 		this.charging = false;
@@ -577,8 +577,8 @@ class Charger extends Enemy{
 
 }
 class Splitter extends Enemy{
-	constructor(width, height,lives=3) {
-		super(width, height);
+	constructor(width, height,player,lives=3) {
+		super(width, height,player);
 		this.colour = "lime";
 		if (lives != 3){
 			[this.lives, this.x, this.y, this.width, this.height] = lives;
@@ -586,6 +586,9 @@ class Splitter extends Enemy{
 		else{
 			this.lives = lives;
 		}
+		if (lives === 2){this.max_health = 40;}
+		if (lives === 1){this.max_health = 30;}
+		
 	}
 	die(){
 		if (this.lives > 1){
@@ -848,6 +851,10 @@ class Player extends Entity{
 		context.fillRect(this.x, this.y, this.length, this.height);
 		context.fillStyle = "red";
 		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
+		
+		
+		context.fillStyle = "purple";
+		context.fillRect(0,0,100,100);
 		context.font = "50px Arial";
 		context.fillStyle = "black";
 		context.fillText("Score: "+this.score,10,80);
@@ -946,6 +953,9 @@ class Ability{
 	}
 	set_level(lvl){
 		this.level = lvl;
+	}
+	draw(context){
+		
 	}
 }
 
@@ -1065,6 +1075,11 @@ class StatBoost{
 		}
 		context.fillStyle = this.boost.colour;
 		context.fillRect(this.x, this.y, this.length,this.height);
+		context.font = Math.floor(this.height/1.5)+"px Arial";
+		context.fillStyle = "black";
+		if (this.boost.colour === "brown"){context.fillStyle = "white";}
+		context.fillText("$",this.x+this.length/3,this.y+(this.height-this.height/3));
+
 	}
 	get_claimed(){
 		return {amount : this.amount, type : this.boost.type};

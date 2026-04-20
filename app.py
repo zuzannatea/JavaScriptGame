@@ -154,3 +154,10 @@ def profile():
                         ORDER BY score DESC;""", (g.user,)).fetchall()
     return render_template("profile.html", results=results)
 
+@app.route("/rules", methods=["POST","GET"])
+def rules():
+    return render_template("rules.html")
+
+@app.route("/credits", methods=["POST","GET"])
+def credits():
+    return render_template("credits.html")
