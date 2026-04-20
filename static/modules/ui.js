@@ -35,7 +35,7 @@ class UIManager{
             }
         }
         this.made_choice;
-        
+        this.created_end = false;
     }
     progress(){
         if (this.current_ui_state_index != this.max_ui_state_index){
@@ -315,6 +315,19 @@ class UIManager{
         this.reset_screen();
         let goBack = this.create_button_with_event_listener("Go back", "create_pause_screen");
         let music = this.create_checkbox("music");
+        
+        music.children[0].checked = !game_manager.sfx_manager.music.currently_paused;
+        music.children[0].addEventListener("change", () => {
+            if (game_manager.sfx_manager.music.currently_paused){
+                game_manager.sfx_manager.restart_music();
+            }
+            else{
+                game_manager.sfx_manager.stop_music();
+
+            }
+
+        });
+
         let table = this.create_keybinds_console();
         this.html_overlay.appendChild(music);
         this.html_overlay.appendChild(table);
@@ -345,14 +358,16 @@ class UIManager{
     }
 
     end_game(score){
-        if (this.html_overlay.hasChildNodes()){
+        if (this.created_end){
             return;
         }
         else{
+            this.created_end = true;
             this.create_end_screen(score);
         }
     }
     create_end_screen(score){
+        this.created_end = true;
         this.reset_screen();
         this.show_screen();
 

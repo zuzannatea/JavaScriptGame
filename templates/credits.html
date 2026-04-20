@@ -1,13 +1,31 @@
 {% extends "base.html" %}
     {% block main %}
-    <button><a href="/">Go back</a></button>
+    <button><a href="{{ url_for('index') }}">Go back</a></button>
     <h2>Asset Credits</h2>
     <ul>
-        <li>Default</li>
+        <li>Tileset - <a href="https://arex-v.itch.io/damp-dungeons">Damp Dungeons</a></li>
+        <li>Character sprites - <a href="https://route1rodent.itch.io/16x16-rpg-character-sprite-sheet">16x16 RPG Character Spritesheet</a></li>
+        <li>Skill icons - <a href="https://quintino-pixels.itch.io/free-pixel-art-skill-icons-pack">Free Pixel Art Skill Icons Pack</a></li>
+        <li>Portal tiles - <a href="https://pixelnauta.itch.io/pixel-dimensional-portal-32x32">Pixel Dimensional Portal 32x32</a></li>
+        <li>Boost Pickup sound - <a href="https://pixabay.com">Sound Effect by Ribhav Agrawal</a></li>
+        <li>Level Up sound - <a href="https://pixabay.com">Sound Effect by Ribhav Agrawal</a></li>
+        <li>Boost pickup sound - <a href="https://pixabay.com">Sound Effect by Universfield</a></li>
+        <li>Slime sound - <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=218566">Sound Effect by floraphonic</a></li>
+        <li>Other sounds - <a href="https://leohpaz.itch.io/minifantasy-dungeon-sfx-pack">Minifantasy Dungeon SFX Pack</a></li>
     </ul>
     <h2>JS Resources Credits</h2>
     <ul>
-        <li></li>
+        <li><a href="https://gamedev.net/tutorials/business/production-and-management/procedural-generation-of-2d-tile-maps-in-games-r6132">Procedural generation algorithm inspiration</a></li>
+        <li><a href="https://www.javascripttutorial.net/array/javascript-sort-an-array-of-objects/">Sorting an array of objects</a></li>
+        <li><a href="https://stackoverflow.com/questions/5613834/convert-string-to-variable-name-in-javascript">Using eval()</a></li>
+        <li><a href="https://stackoverflow.com/questions/60750529/detecting-duration-of-key-press-using-javascript">Key press time detection</a></li>
+        <li><a href="https://www.xjavascript.com/blog/how-to-detect-if-multiple-keys-are-pressed-at-once-using-javascript/#solution-track-key-states-with-a-set">Using a set for key press detection</a></li>
+        <li><a href="https://stackoverflow.com/questions/9071573/is-there-a-simple-way-to-make-a-random-selection-from-an-array-in-javascript-or">Choose function</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax">Spread syntax</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/URL_API/Resolving_relative_references">Interacting with Flask without reloading page</a></li>
+        <li><a href="https://github.com/mdn/js-examples">Exporting and importing across files</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values">Keybind values</a></li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener">Rebinding key values</a></li>
     </ul>
 
 {% endblock %}

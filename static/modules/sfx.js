@@ -6,7 +6,8 @@ class SFXManager{
         this.music = {
             chill_music : new Audio(),
             game_music : new Audio(),
-            currently_playing : null
+            currently_playing : null,
+            currently_paused : false
         }
         this.sounds = {
             player_damage : new Audio(),
@@ -54,6 +55,7 @@ class SFXManager{
 
     }
     play_music(){
+        if (this.music.currently_paused){return;}
         console.log("Playing");
         console.log(this);
         this.music.chill_music.loop = true;
@@ -61,6 +63,7 @@ class SFXManager{
         this.music.currently_playing = this.music.chill_music;
     }
     change_music(type){
+        if (this.music.currently_paused){return;}
         this.music.currently_playing.pause();
         this.music[type].loop = true;
         this.music[type].play();
@@ -68,9 +71,11 @@ class SFXManager{
     }
     stop_music(){
         this.music.currently_playing.pause();
+        this.music.currently_paused = true;
     }
     restart_music(){
         this.music.currently_playing.play();
+        this.music.currently_paused = false;
 
     }
 

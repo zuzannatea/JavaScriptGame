@@ -12,8 +12,9 @@ EXTTRA
 - add stat boosts into cheats 
 - improve special moves
 
-- add tilesets 
 - add sprites w animations 
-- add sfx manager for sounds 
+- add a on screen ui 
+- fucking favicon
 
 fixed:
+- Added turning music on and off 
