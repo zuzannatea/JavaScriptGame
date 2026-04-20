@@ -1,3 +1,6 @@
+import { game_manager } from "../main.js";
+
+
 class UIManager{
     constructor(keybinds){
         this.ui_states = {
@@ -201,6 +204,8 @@ class UIManager{
         let creditsButton = this.create_button_with_link("Credits", "credits");
     }
     create_sign_in_screen(){
+        game_manager.sfx_manager.play_music("chill_music");
+
         let p1 = document.querySelector("header p:first-child a");
         if (!(p1.innerHTML==="Leaderboard")){
             this.progress();
@@ -213,13 +218,19 @@ class UIManager{
         let signInButton = this.create_button_with_event_listener("Play", "progress");
     }
     create_game_screen(){
+        game_manager.sfx_manager.change_music("game_music");
+
         this.hide_screen();
     }
     resume_functionality(){
+        game_manager.sfx_manager.change_music("game_music");
+
         this.ready = true;
         this.resume_game();
     }
     create_pause_screen(){
+        game_manager.sfx_manager.change_music("chill_music");
+
         this.reset_screen();
         let resumeButton = this.create_button_with_event_listener("Resume", "resume_functionality");
         let settingsButton = this.create_button_with_event_listener("Settings", "create_settings_screen");

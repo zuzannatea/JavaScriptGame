@@ -2,6 +2,7 @@ import { canvas, player, stop as stopGame } from "../main.js";
 import { Player, Enemy, Zombie, Charger, Splitter, Swarmer, Teleporter, StatBoost } from "./entities.js";
 import { dist, remove_item, is_colliding, choose, load_assets } from "./utils.js";
 import { UIManager } from "./ui.js";
+import { SFXManager } from "./sfx.js";
 
 
 const level_details = {
@@ -55,7 +56,9 @@ function blank(){return;}
 class GameManager{
     constructor(){
         this.enemies = [];
-        this.player = new Player();
+        this.sfx_manager = new SFXManager();
+
+        this.player = new Player(canvas.width,canvas.height,this.sfx_manager);
         this.current_level = new Level(1, this.player);
         this.final_level_id = 2;
         this.stat_boosts = [];
@@ -86,7 +89,6 @@ class GameManager{
             {"var" : warning_tile, "url" : "static/assets/tiles/floor_tiles/shiny_sandy_quadruple_tile.png"},
             
         ], blank)
-
 
     }
     rebuild_keymap(){
@@ -195,6 +197,7 @@ class GameManager{
         return false;
     }
     progress_to_next_level(){
+        this.sfx_manager.play_sound("level_up_sound");
         this.enemies = [];
         this.stat_boosts = [];
         this.exit_tiles = undefined;
@@ -232,7 +235,7 @@ class GameManager{
         let curr_boosts = this.stat_boosts.length;
         console.log(curr_boosts,num_of_boosts);
         for (let i = curr_boosts; i < num_of_boosts; i++){
-            this.stat_boosts.push(new StatBoost());
+            this.stat_boosts.push(new StatBoost(this.sfx_manager));
         }
     }
     draw(context){
@@ -285,11 +288,14 @@ class GameManager{
 		if (this.pause_cooldown <= 0){
 			if (this.pressedKeys.has("running")){
 				this.running = !this.running;
+
 				this.pause_cooldown = 5;
                 if (!this.running){
+                    this.sfx_manager.change_music("chill_music");
                     this.ui_manager.pause_game();
                 }
                 else{
+                    this.sfx_manager.change_music("game_music");
                     this.ui_manager.resume_game();
                 }
 

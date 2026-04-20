@@ -66,3 +66,7 @@ function load_assets(assets, callback){
 }
 
 export {dist,randint,wait,choose, remove_item, is_colliding, load_assets}
+
+
+//coin.currentTime = 0;
+//coin.play();

@@ -689,9 +689,10 @@ class Teleporter extends Enemy{
 }
 
 class Player extends Entity{
-	constructor(width, height) {
-		super();
-		this.ability_manager = new AbilityManager(this);
+	constructor(width, height,sfx_manager) {
+		super(width, height);
+		this.sfx_manager = sfx_manager;
+		this.ability_manager = new AbilityManager(this, this.sfx_manager);
 		this.canvas = [width,height];
 		this.x = Math.floor(canvas.width/2);
 		this.y = Math.floor(canvas.height/2);
@@ -722,7 +723,8 @@ class Player extends Entity{
 	}
 	handle_key_presses(action){
         if (action === "specialMove" && !this.pressedKeys.has("specialMove")){
-            this.keyPressTimer = Date.now();
+            this.sfx_manager.loop_sound("player_charging");
+			this.keyPressTimer = Date.now();
         }
 		this.pressedKeys.add(action);
 		return;
@@ -735,6 +737,8 @@ class Player extends Entity{
 			else{
 				this.longQTap = true;
 			}
+            this.sfx_manager.unloop_sound("player_charging");
+
 			this.keyPressTimer = 0;
 		}
 		this.pressedKeys.delete(action);
@@ -744,12 +748,15 @@ class Player extends Entity{
 		if (this.invulnerability){return;}
 		if (this.invincibility){return;}
 
+		this.sfx_manager.play_sound("player_damage");
 		if (Date.now() - this.last_attack < 750 || this.curr_health <= 0){
 			return;
 		}
 		this.last_attack = Date.now();
 		if (this.curr_health - amount <= 0){
 			this.curr_health = 0;
+			this.sfx_manager.play_sound("player_death");
+
 			this.die();
 			return true;
 		}
@@ -877,8 +884,9 @@ class Player extends Entity{
 }
 
 class AbilityManager{
-	constructor(player){
+	constructor(player, sfx_manager){
 		this.player = player;
+		this.sfx_manager = sfx_manager;
 		this.all_abilities = {
 			smash : Smash,
 			roll : Roll,
@@ -901,6 +909,7 @@ class AbilityManager{
 		return false;
 	}
 	perform(name){
+		this.sfx_manager.play_sound("player_dash");
 		if (this.current_abilities[name]){
 			if (this.current_abilities[name] === 0){
 				return;
@@ -955,7 +964,7 @@ class Ability{
 		this.level = lvl;
 	}
 	draw(context){
-		
+
 	}
 }
 
@@ -1031,7 +1040,8 @@ class Charge extends Ability{
 }
 
 class StatBoost{
-	constructor(){
+	constructor(sfx_manager){
+		this.sfx_manager = sfx_manager;
 		this.available_boosts = [
 			{type : "speed", colour: "yellow"}, 
 			{type : "strength", colour : "brown"}, 
@@ -1082,6 +1092,7 @@ class StatBoost{
 
 	}
 	get_claimed(){
+		this.sfx_manager.play_sound("boost_collect_sound");
 		return {amount : this.amount, type : this.boost.type};
 	}
 }
