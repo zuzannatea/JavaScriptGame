@@ -7,33 +7,68 @@ import { SFXManager } from "./sfx.js";
 
 const level_details = {
     1 : {
-        enemies : {Teleporter : 1},
+        enemies : {Zombie : 4, Charger : 1},
         stat_boosts : 2,
         score_needed : 0
     },
     2 : {
-        enemies : {Zombie : 2},
+        enemies : {Zombie : 2, Swarmer : 6},
         stat_boosts : 3,
-        score_needed : 10
+        score_needed : 0
     },
     3 : {
-        enemies : {Charger : 2,
-            Zombie : 1
+        enemies : {Charger : 4,
+            Zombie : 4
         },
         stat_boosts : 1,
-        score_needed : 10
+        score_needed : 0
+    },
+    4 : {
+        enemies : {Splitter : 2,
+            Zombie : 4,
+            Charger : 1
+        },
+        stat_boosts : 2,
+        score_needed : 0
+    },
+    5 : {
+        enemies : {Teleporter : 2,
+            Zombie : 4
+        },
+        stat_boosts : 2,
+        score_needed : 0
+    },
+    6 : {
+        enemies : {Charger : 1,
+            Teleporter : 1,
+            Swarmer : 5,
+            Splitter : 2,
+            Zombie : 4
+        },
+        stat_boosts : 3,
+        score_needed : 0
     }
 
 }
 
-let water_tile = new Image();
+let water_tile1 = new Image();
+let water_tile2 = new Image();
+let water_tile3 = new Image();
+
 let floor_tile = new Image();
-let portal_tile = new Image();
+
+let portal_tile1 = new Image();
+let portal_tile2 = new Image();
+let portal_tile3 = new Image();
+let portal_tile4 = new Image();
+let portal_tile5 = new Image();
+let portal_tile6 = new Image();
+
 let warning_tile = new Image();
 const TileType = {
-    wall : {img : water_tile, access : false},
+    wall : {frames: [water_tile1, water_tile2, water_tile3], access : false, frequency : 3},
     floor : {img : floor_tile, access : true},
-    portal : {img : portal_tile, access : true},
+    portal : {frames: [portal_tile1, portal_tile2, portal_tile3, portal_tile4, portal_tile5, portal_tile6], access : true, frequency : 6},
     warning : {img : warning_tile, access : true},
 }
 let TILE_SIZE = 32;
@@ -60,7 +95,7 @@ class GameManager{
 
         this.player = new Player(canvas.width,canvas.height,this.sfx_manager);
         this.current_level = new Level(1, this.player);
-        this.final_level_id = 2;
+        this.final_level_id = 6;
         this.stat_boosts = [];
         this.exit_tiles;
 
@@ -80,12 +115,19 @@ class GameManager{
 
         this.key_to_action = this.rebuild_keymap();
         this.ui_manager = new UIManager(this.keybinds);
-
+        this.ended = false;
         this.tile_frame_counter; 
         load_assets([
             {"var" : floor_tile, "url" : "static/assets/tiles/floor_tiles/green_quadruple_tile.png"},
-            {"var" : water_tile, "url" : "static/assets/tiles/water_tiles/water_tile1.png"},
-            {"var" : portal_tile, "url" : "static/assets/tiles/portal_tiles/portal_tile1.png"},
+            {"var": water_tile1, "url": "static/assets/tiles/water_tiles/water_tile1.png"},
+            {"var": water_tile2, "url": "static/assets/tiles/water_tiles/water_tile2.png"},
+            {"var": water_tile3, "url": "static/assets/tiles/water_tiles/water_tile3.png"},
+            {"var" : portal_tile1, "url" : "static/assets/tiles/portal_tiles/portal_tile1.png"},
+            {"var" : portal_tile2, "url" : "static/assets/tiles/portal_tiles/portal_tile2.png"},
+            {"var" : portal_tile3, "url" : "static/assets/tiles/portal_tiles/portal_tile3.png"},
+            {"var" : portal_tile4, "url" : "static/assets/tiles/portal_tiles/portal_tile4.png"},
+            {"var" : portal_tile5, "url" : "static/assets/tiles/portal_tiles/portal_tile5.png"},
+            {"var" : portal_tile6, "url" : "static/assets/tiles/portal_tiles/portal_tile6.png"},
             {"var" : warning_tile, "url" : "static/assets/tiles/floor_tiles/shiny_sandy_quadruple_tile.png"},
             
         ], blank)
@@ -98,7 +140,6 @@ class GameManager{
                 key_to_action[key] = action;
             }
         }
-        console.log(key_to_action);
         this.key_to_action = key_to_action;
         return key_to_action;
     }
@@ -150,6 +191,8 @@ class GameManager{
 
     }
     end(){
+        if (this.ended){return;}
+        this.ended = true;
         let data = new FormData();
         data.append("score",this.player.score);
         xhttp = new XMLHttpRequest();
@@ -181,7 +224,7 @@ class GameManager{
         if (this.exit_tiles){
             if (this.check_exiting()){
                 this.progress_to_next_level();
-                console.log("Progressed");
+
                 return;
             }
         }
@@ -205,7 +248,6 @@ class GameManager{
         this.player.y = Math.floor(canvas.height/2);
         this.player.curr_health = this.player.max_health;
         if (this.current_level.id === this.final_level_id){
-            console.log("Done");
             this.end();
             return;
         }
@@ -233,7 +275,6 @@ class GameManager{
     construct_stat_boosts(){
         let num_of_boosts = level_details[this.current_level.id].stat_boosts;
         let curr_boosts = this.stat_boosts.length;
-        console.log(curr_boosts,num_of_boosts);
         for (let i = curr_boosts; i < num_of_boosts; i++){
             this.stat_boosts.push(new StatBoost(this.sfx_manager));
         }
@@ -256,17 +297,14 @@ class GameManager{
             this.rebuild_keymap();
         }
         if (this.ui_manager.cheats.on){
-            console.log("updating cheats");
             this.ui_manager.cheats.on = false;
             this.player.kill_aura = this.ui_manager.cheats.kill_aura;
             this.player.invincibility = this.ui_manager.cheats.invincibility;
             if (this.ui_manager.cheats.set_score){
-                console.log(this.ui_manager.cheats.set_score);
                 this.player.score = this.ui_manager.cheats.set_score;
             }
             for (let boost in this.ui_manager.cheats.boosts){
                 if (this.ui_manager.cheats.boosts[boost]){
-                    console.log(this.ui_manager.cheats.boosts[boost], boost);
                     this.player.ability_manager.set_level(boost, this.ui_manager.cheats.boosts[boost]);
                 }
             }
@@ -382,7 +420,6 @@ let MAP_SIZE_MODIFIER = 1.5;
 class Level{
     constructor(id, player){
         this.id = id;
-        console.log(id);
         this.map = [];
         //for pathfindi g
         this.player_pos = {x:0, y:0};
@@ -399,18 +436,21 @@ class Level{
 			for (let col = 0; col < distance[0].length; col++){
 				if ((distance[row][col] === 4) && distance[row+1][col] < Number.MAX_SAFE_INTEGER){
 					possible_choice_in_tiles.push({
-						x1 : row, 
+						x : row, 
 						y : col,
 						x2 : row+1,
+                        length : TILE_SIZE,
+                        height : TILE_SIZE,
                         value : distance[row][col]
 					})
 				}
 			}
 		}
-        console.log(possible_choice_in_tiles);
 		let chosen = choose(possible_choice_in_tiles);
-        console.log(chosen);
-        this.map[chosen.y][chosen.x1] = TileType.portal;
+        if (dist(this.player,chosen) > 300){
+            chosen = choose(possible_choice_in_tiles);
+        }
+        this.map[chosen.y][chosen.x] = TileType.portal;
         this.map[chosen.y][chosen.x2] = TileType.portal;
         
         this.exit = {x1 : chosen.x1, x2 : chosen.x2, y : chosen.y}
@@ -456,7 +496,6 @@ class Level{
         let [sourceX, sourceY] = source_tile;
         let [destX, destY] = destination_tile;
         if ((!this.get_tile(destX, destY).access) || (!this.get_tile(sourceX,sourceY).access)){
-            console.log("No path");
             return -1;
         }
         let adj = [];
@@ -534,17 +573,24 @@ class Level{
 
         let player_tiles = this.player.get_current_tiles();
         let [y,x] = player_tiles[0];
-        //console.log("RAN HERE AT LEAST TOO");
 
         if (dist(this.player_pos, this.player) > TILE_SIZE*2){
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
-            //console.log("RAN HERE TOO");
             this.player_pos = {x : this.player.x, y : this.player.y};
         }
         for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
             for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
                 //context.fillStyle = this.map[r][c];
-                context.drawImage(this.map[r][c].img, (r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                let tile = this.map[r][c];
+                let img;
+                if (tile.frames) {
+                    let frame = Math.floor(Date.now() / 250) % tile.frequency;
+                    img = tile.frames[frame];
+                } else {
+                    img = tile.img;
+                }
+
+                context.drawImage(img, (r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
 

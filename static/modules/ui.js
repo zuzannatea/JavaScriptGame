@@ -55,7 +55,6 @@ class UIManager{
                 credentials: "same-origin"
                 }
             );
-            console.log(response);
             if (response.ok){
                 const data = await response.json();
                 let ps = document.querySelectorAll("header p");
@@ -299,14 +298,12 @@ class UIManager{
         if (e.key === "Backspace"){return};
         if (this.check_for_duplicate_keybinds(e.key)){return;}
         this.keybinds[this.rebind.action] = [e.key];
-        console.log(e.key, this.rebind.action);
         this.rebind = {
             active : false,
             action : null,
             key : null
         }
         this.changed_rebind = true;
-        console.log(this.keybinds);
         this.create_settings_screen();
         return;
 
@@ -349,10 +346,8 @@ class UIManager{
         this.html_overlay.addEventListener("change", e => {
             if (e.target.matches('input[type="radio"]')) {
                 const { name, value } = e.target;
-                console.log(name, value);
                 this.cheats.boosts[name] = Number(value);
                 this.cheats.on = true;
-                console.log(this.cheats);
             }
         });
     }
@@ -402,7 +397,6 @@ class UIManager{
 
         let name = "choice";
         for (let ability in ability_manager.current_abilities){
-            console.log("AB",!(ability in finished_abilities), finished_abilities);
             if (!(ability in finished_abilities)){
                 let label = this.create_radio(name,ability);
                 this.html_overlay.appendChild(label);
@@ -416,7 +410,6 @@ class UIManager{
         this.html_overlay.addEventListener("change", e => {
             if (e.target.matches('input[type="radio"]')) {
                 const { name, value } = e.target;
-                console.log(name, value);
                 result = {name : name, value : value};
             }
         });

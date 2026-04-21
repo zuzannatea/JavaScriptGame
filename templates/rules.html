@@ -4,10 +4,25 @@
     {% block main %}
     <button><a href="{{ url_for('index') }}">Go back</a></button>
 
+    <div id="rules-helper">
     <h2>Rules of the Game</h2>
         <ul>
             <li>Upgrade your character through stat boosts and advancing extra moves</li>
         </ul>
+
+<br><br>
+        <h2>Default Movement Mechanics</h2>
+    <p><b>Tip:</b> The keybinds can be changed in settings: click the keybind you want to change and then press a key you'd prefer to use.</p>
+    <ul>
+        <li>To move up, press Arrow Up key.</li>
+        <li>To move down, press Arrow Down key.</li>
+        <li>To move right, press Arrow Right key.</li>
+        <li>To move left, press Arrow Left key.</li>
+        <li>To perform ordinary attack, press Space key.</li>
+        <li>To perform Roll, press Shift and Q keys together.</li>
+        <li>To perform Smash, hold Q key for several seconds.</li>
+        <li>To perform Charge, press Q key.</li>
+    </ul>
     <br><br>
         <h2>How to Play</h2>
         <ul>
@@ -22,11 +37,13 @@
     <br>
 
     <h3>Zombie</h3>
+    <img src="{{ url_for('static', filename='assets/sprites/devout-green.png') }}">
     <ul>
         <li>It will <i>always</i> track you, regardless of where you are on the map  </li>
     </ul>
     <br>
     <h3>Swarmer</h3>
+    <img src="{{ url_for('static', filename='assets/sprites/conjurer-red.png') }}">
     <ul>
         <li>If they’re alone, they will seek to find a friend. </li>
         <li>If they have friends but less than 3 of them, they will wander. </li>
@@ -35,18 +52,24 @@
     </ul>
     <br>
     <h3>Charger</h3>
+    <img src="{{ url_for('static', filename='assets/sprites/conjurer-green.png') }}">
+
     <ul>
         <li>If there exists a straight, unobstructed path between it and you, it will gain a speed boost and begin rushing straight at you.</li>
         <li><b>Note:</b> once it spots a straight path, a line will appear, warning you of it. </li>
     </ul>
     <br>
     <h3>Splitter</h3>
+    <img src="{{ url_for('static', filename='assets/sprites/conjurer-blue.png') }}">
+
     <ul>
         <li>It has three lives. If you kill it, it will respawn into two smaller versions of itself, each one having two lives of their own. </li>
         <li><b>Note:</b> the smaller, spawned versions of Splitters have less health. </li>
     </ul>
     <br>
     <h3>Teleporter</h3>
+    <img src="{{ url_for('static', filename='assets/sprites/conjurer-burgundy.png') }}">
+
     <ul>
         <li>If it detects player is close enough, it will teleport to player’s surroundings and wait a small cooldown. </li>
         <li>Teleporting has a cooldown as well; if it’s active, Teleporter will simply hunt player manually. </li>
@@ -57,18 +80,23 @@
     <h2>Extra Moves</h2>
     <p>There are three extra moves. Each one can be first gained, and then upgraded upon completing a level. </p>
     <ul>
+            <img src="{{ url_for('static', filename='assets/extra/smash_icon.png') }}">
         <li>Smash causes damage to all entities in the player’s surroundings. </li>
+
         <ul>
             <li>It has three tiers: <b>Smash</b> (regular ranged attack), <b>Double Smash</b> (extra ranged attack) and <b>Mega Smash</b> (an even more extra ranged attack and several seconds of invulnerability.) </li>
         </ul>
             <br>
 
+            <img src="{{ url_for('static', filename='assets/extra/roll_icon.png') }}">
         <li>Roll lets the player move while becoming invincible for a short moment.</li>
         <ul>
             <li>It has three tiers: <b>Roll</b> (a very short invulnerability period), <b>Prolonged Roll</b> (a slightly longer invulnerability period) and <b>Damage Roll</b> (an even longer invulnerability period, plus causes damage to all entities in the player’s surroundings.) </li>
         </ul>
     <br>
+            <img src="{{ url_for('static', filename='assets/extra/charge_icon.png') }}">
         <li>Charge lets the player attack the enemies with a speed boost. </li>
+
         <ul>
             <li>It has three tiers: <b>Charge</b> (a slight increase in player speed for a moment), <b>Faster Charge</b> (the player’s speed is doubled for a longer moment) and <b>Explosiong Charge</b> (an even bigger increase in player speed for longer, plus a ranged attack.) </li>
         </ul>
@@ -78,8 +106,18 @@
     <h2>Extras</h2>
     <br>
     <h3>Cheats</h3>
-    <p>It’s possible to turn on invulnerability, kill aura (player automatically attacks all enemies without keyboard input) and give the player extra move boosts</p>
+    <p>It’s possible to turn on invulnerability, kill aura (player automatically attacks all enemies without keyboard input) and give the player extra move boosts.</p>
     <br>
     <h3>Settings</h3>
     <p>It’s possible to change keybinds and turn the music on and off</p>
+    <h3>Stat Boosts</h3>
+    <p>There are <b>four</b> types of stat boosts. Each one has a colour corresponding to it.</p>
+    <ul>
+        <li>speed is <i id="yellow">yellow</i></li>
+        <li>strength is <i id="brown">brown</i></li>
+        <li>current health is <i id="pink">pink</i></li>
+        <li>max health is <i id="orange">orange</i></li>
+    </ul>
+    </div>
+
     {% endblock %}

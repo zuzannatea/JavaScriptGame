@@ -56,8 +56,6 @@ class SFXManager{
     }
     play_music(){
         if (this.music.currently_paused){return;}
-        console.log("Playing");
-        console.log(this);
         this.music.chill_music.loop = true;
         this.music.chill_music.play();
         this.music.currently_playing = this.music.chill_music;

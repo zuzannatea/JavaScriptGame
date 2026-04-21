@@ -37,7 +37,7 @@ function is_colliding(object1, object2){
 		return true;
 	}
 }
-
+function blank(){}
 function load_assets(assets, callback){
 	console.log(assets);
     let num_assets = assets.length;
@@ -65,7 +65,7 @@ function load_assets(assets, callback){
     }
 }
 
-export {dist,randint,wait,choose, remove_item, is_colliding, load_assets}
+export {dist,randint,wait,choose, blank,remove_item, is_colliding, load_assets}
 
 
 //coin.currentTime = 0;

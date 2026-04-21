@@ -1,6 +1,6 @@
 import { canvas, game_manager, player } from "../main.js";
 import {TILE_SIZE, COLLIDER_TILES} from "./levelmanagement.js";
-import {dist as calcDist,randint, choose, is_colliding} from "./utils.js";
+import {dist as calcDist,randint, choose, blank, is_colliding, load_assets} from "./utils.js";
 
 
 let all_entities = [];
@@ -14,7 +14,7 @@ class Entity{
 		this.height = 20;
 
 		this.speed = 5;
-		this.strength = 10;
+		this.strength = 5;
 		this.max_health = 50;
 
 		this.curr_health = this.max_health;
@@ -39,6 +39,20 @@ class Entity{
 	die(){
 		game_manager.remove_entity(this);
 	}
+	animate(){
+		if (this.isMoving){
+			this.frameTimer++;
+
+			if (this.frameTimer > 10){
+				this.frame = (this.frame + 1) % 3;
+				this.frameTimer = 0;
+			}
+		} else {
+			this.frame = 1;
+		}
+
+	}
+
 	try_move(xMove,yMove){
 		if (this.x + this.length + xMove >= this.canvas[0] ||
 			this.x + xMove < 0 ||
@@ -137,6 +151,7 @@ class Enemy extends Entity{
 	constructor(width, height, player) {
 		super();
 		this.player = player;
+		this.sprite = new Image();
 
 		this.canvas = [width, height];
 		this.x;
@@ -148,6 +163,71 @@ class Enemy extends Entity{
 		this.target = {x : this.x, y : this.y};
 
 		this.colour = "yellow";
+		this.frame = 1;
+		this.frameTimer = 0;
+		this.direction = 0;
+		this.isMoving = false;
+
+	}
+	try_move(xMove,yMove){
+		const startX = this.x;
+		const startY = this.y;
+
+		if (this.x + this.length + xMove >= this.canvas[0] ||
+			this.x + xMove < 0 ||
+			this.y + this.height + yMove >= this.canvas[1] ||
+			this.y + yMove < 0){
+				return false;
+		}
+
+		let moved = false;
+
+		if (xMove !== 0){
+			this.move_by(xMove,0);
+			if (this.tile_colliding()){
+				this.move_by(-xMove,0);
+			} else {
+				moved = true;
+			}
+		}
+		if (yMove !== 0){
+			this.move_by(0,yMove);
+			if (this.tile_colliding()){
+				this.move_by(0,-yMove);
+			} else {
+				moved = true;
+			}
+		}
+		if (!moved){
+			return false;
+		}
+		let entity_colliding = this.entity_colliding();
+		if (entity_colliding){
+			this.move_by(-xMove,-yMove);
+			//let distance = this.estimate_distance(this,entity_colliding,xMove,yMove);
+			//this.move_by(distance[0],distance[1]);
+			return false; 
+		}
+		let dx = this.x - startX;
+		let dy = this.y - startY;
+
+		if (Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001){
+			this.setDirection(dx, dy);
+			this.isMoving = true;
+		} else {
+			this.isMoving = false;
+		}
+		return true;
+	}
+
+	setDirection(xMove, yMove){
+		if (Math.abs(xMove) > Math.abs(yMove)){
+			if (xMove > 0) this.direction = 2;
+			else this.direction = 1; 
+		} else {
+			if (yMove > 0) this.direction = 0; 
+			else this.direction = 3; 
+		}
 	}
 
 	pick_a_point(){
@@ -175,6 +255,8 @@ class Enemy extends Entity{
 	update(current_level, priority=0){
 		if (current_level.distance_to_player.length===0){return;}
 
+		this.isMoving = false;
+
 		if (calcDist(this,this.player) > 300){
 			this.colour = "purple";
 			
@@ -187,13 +269,18 @@ class Enemy extends Entity{
 		else{
 			this.hunt(current_level, priority);
 		}
+		this.animate();
+
 	}
 	hunt(current_level, priority){
 		let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+		this.setDirection(xMove, yMove);
+
 		while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
 			this.snap_to_tile();
 			[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
 		} 
+
 	}
 	wander(){
 		if (this.target.length === 0 || is_in_range(this,this.target, 30)){
@@ -212,6 +299,8 @@ class Enemy extends Entity{
 		dy = dy/distance;
 		xMove = dx*this.speed/4;
 		yMove = dy*this.speed/4;
+		this.setDirection(xMove, yMove);
+
 		if (!(this.try_move(xMove,0) && this.try_move(0, yMove))){
 			this.snap_to_tile();
 			this.target = this.pick_a_point();
@@ -254,9 +343,9 @@ class Enemy extends Entity{
 		}
 		possible_tiles.sort((a, b) => a.value - b.value);
 
-		if (possible_tiles.length === 0){console.log("length 0");return [0,0];}
+		if (possible_tiles.length === 0){return [0,0];}
 		if (possible_tiles[priority].value === Number.MAX_SAFE_INTEGER){
-			console.log("infinity");return [0,0];
+			return [0,0];
 		}
 		return possible_tiles[priority].move;
 	}
@@ -289,11 +378,23 @@ class Enemy extends Entity{
 	}	
 	
 	draw(context){
+		context.drawImage(
+			this.sprite,
+			this.frame * TILE_SIZE,
+			this.direction * TILE_SIZE,
+			TILE_SIZE,
+			TILE_SIZE,
+			this.x,
+			this.y,
+			this.length,
+			this.height
+		);
+
 		context.fillStyle = "red";
 		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
-		context.fillStyle = this.colour;
+/* 		context.fillStyle = this.colour;
 		context.fillRect(this.x, this.y, this.length, this.height);
-	}
+ */	}
 
 	tile_colliding(){
 		let all_tiles = this.get_current_tiles();
@@ -318,10 +419,15 @@ class Enemy extends Entity{
 class Zombie extends Enemy{
 	constructor(width, height,player) {
 		super(width, height,player);
+        load_assets([
+			{"var" : this.sprite, "url" : "static/assets/sprites/devout-green.png"}
+		], blank)
 
 		this.colour = "teal";
 	}
 	update(current_level, priority=0){
+		this.isMoving = false;
+
 		if (current_level.distance_to_player.length===0){return;}
 		if (calcDist(this,this.player) < 50){
 			this.colour = "orange";
@@ -334,6 +440,7 @@ class Zombie extends Enemy{
 				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
 			} 
 		}
+		this.animate();
 	}
 
 }
@@ -347,6 +454,9 @@ class Swarmer extends Enemy{
 		this.max_health = 25;
 		this.colour = "liliac";
 		this.friends = [];
+        load_assets([
+			{"var" : this.sprite, "url" : "static/assets/sprites/conjurer-red.png"}
+		], blank)
 
 	}
 	count_friends(){
@@ -390,6 +500,8 @@ class Swarmer extends Enemy{
 		dy = dy/distance;
 		xMove = dx*this.speed/4;
 		yMove = dy*this.speed/4;
+		this.setDirection(xMove, yMove);
+
 		if (!(this.try_move(xMove,0) && this.try_move(0, yMove))){
 			this.snap_to_tile();
 			this.target = this.find_a_friend();
@@ -408,6 +520,8 @@ class Swarmer extends Enemy{
 		}
 	}
 	update(current_level, priority=0){
+		this.isMoving = false;
+
 		if (current_level.distance_to_player.length===0){return;}
 		this.update_current_friends();
 		//spped modifier 
@@ -433,21 +547,36 @@ class Swarmer extends Enemy{
 				this.attack_charge();
 		}
 
-		
+		this.animate();
+
 	}
 }
 class Charger extends Enemy{
 	constructor(width, height,player) {
 		super(width, height,player);
 		this.speed = 1.5;
+		this.max_health = 60;
+        load_assets([
+			{"var" : this.sprite, "url" : "static/assets/sprites/conjurer-green.png"}
+		], blank)
+
 		this.colour = "maroon";
 		this.charging = false;
 	}
 	draw(context){
 		context.fillStyle = "red";
 		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
-		context.fillStyle = this.colour;
-		context.fillRect(this.x, this.y, this.length, this.height);
+		context.drawImage(
+			this.sprite,
+			this.frame * TILE_SIZE,
+			this.direction * TILE_SIZE,
+			TILE_SIZE,
+			TILE_SIZE,
+			this.x,
+			this.y,
+			this.length,
+			this.height
+		);
 		if (this.charging){
 			context.beginPath();
 			context.moveTo(this.x+(this.length/2),this.y+(this.height/2));
@@ -550,11 +679,15 @@ class Charger extends Enemy{
 		dy = dy/distance;
 		xMove = dx*this.speed*4;
 		yMove = dy*this.speed*4;
+		this.setDirection(xMove, yMove);
+
 		if (!(this.try_move(xMove,0) && this.try_move(0, yMove))){
 			this.snap_to_tile();
 		}
 	}
 	update(current_level, priority=0){
+		this.isMoving = false;
+
 		if (current_level.distance_to_player.length===0){return;}
 
 		if (this.exists_straight_path(current_level.distance_to_player)){
@@ -568,11 +701,14 @@ class Charger extends Enemy{
 		else{
 			this.charging = false;
 			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			this.setDirection(xMove, yMove);
 			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
 				this.snap_to_tile();
 				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
 			} 
 		}
+		this.animate();
+
 	}
 
 }
@@ -580,6 +716,10 @@ class Splitter extends Enemy{
 	constructor(width, height,player,lives=3) {
 		super(width, height,player);
 		this.colour = "lime";
+        load_assets([
+			{"var" : this.sprite, "url" : "static/assets/sprites/conjurer-blue.png"}
+		], blank)
+
 		if (lives != 3){
 			[this.lives, this.x, this.y, this.width, this.height] = lives;
 		}
@@ -605,8 +745,13 @@ class Teleporter extends Enemy{
 		super(width, height, player);
 		this.colour = "pink";
 		this.speed = 2;
+		this.max_health = 65;
 		this.buffering_timestamp;
 		this.teleporting_timestamp = Date.now() + 2500;
+        load_assets([
+			{"var" : this.sprite, "url" : "static/assets/sprites/conjurer-burgundy.png"}
+		], blank)
+
 	}
 	move_instantly(x,y){
 		this.x = x;
@@ -658,15 +803,25 @@ class Teleporter extends Enemy{
 		if (this.check_buffering_time()){return;}
 		context.fillStyle = "red";
 		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
-		context.fillStyle = this.colour;
-		context.fillRect(this.x, this.y, this.length, this.height);
+		context.drawImage(
+			this.sprite,
+			this.frame * TILE_SIZE,
+			this.direction * TILE_SIZE,
+			TILE_SIZE,
+			TILE_SIZE,
+			this.x,
+			this.y,
+			this.length,
+			this.height
+		);
 	}
 
 	update(current_level, priority=0){
+		this.isMoving = false;
+
 		if (current_level.distance_to_player.length===0){return;}
 
 		if (this.check_buffering_time()){return;}
-			//console.log(this,this.player);
 
 		if (calcDist(this,this.player) > 300){
 			this.wander();
@@ -683,6 +838,8 @@ class Teleporter extends Enemy{
 			this.colour = "orange";
 			this.attack_charge();
 		}
+		this.animate();
+
 	}
 
 
@@ -702,7 +859,8 @@ class Player extends Entity{
 		this.score = 0;
 		this.extraMoves = [];
 
-		this.speed = 5;
+		this.speed = 2;
+		this.strength = 7;
 		
 		this.pressedKeys = new Set();
 
@@ -719,6 +877,17 @@ class Player extends Entity{
 		this.speeding_timestamp;
 
 		this.colour = "cyan";
+
+		this.sprite = new Image();
+        load_assets([
+			{"var" : this.sprite, "url" : "static/assets/sprites/conjurer-pink-girl.png"}
+		], blank)
+
+		this.frame = 0;
+		this.frameTimer = 0;
+		this.direction = 0;
+		this.isMoving = false;
+
 	
 	}
 	handle_key_presses(action){
@@ -794,25 +963,37 @@ class Player extends Entity{
 
 
 	update(){
-		//console.log("RUNS PLAYER");
 		this.check_abilities();
 		this.cooldown = Math.max(this.cooldown - 1,0);
 
+		this.isMoving = false;
+
+
 		if (this.pressedKeys.has("moveRight")){
 			this.try_move(this.speed,0);
+			this.direction = 2;
+			this.isMoving = true;
+
 		}
 		if (this.pressedKeys.has("moveLeft")){
 			this.try_move(-this.speed,0);
+			this.direction = 1;
+			this.isMoving = true;
 		}
 		if (this.pressedKeys.has("moveUp")){
 			this.try_move(0,-this.speed);
+			this.direction = 3;
+			this.isMoving = true;
 		}
 		if (this.pressedKeys.has("moveDown")){
 			this.try_move(0,this.speed);
+			this.direction = 0;
+			this.isMoving = true;
 		}
 		if (this.pressedKeys.has("isAttacking") || this.kill_aura){
 			this.attack();
 		}
+		this.animate();
 
 		if (this.cooldown <= 0){
 			if (this.pressedKeys.has("specialMoveModifier")){
@@ -821,12 +1002,12 @@ class Player extends Entity{
 			
 			}
 			else if (this.longQTap){
-				this.ability_manager.perform("roll");
+				this.ability_manager.perform("smash");
 				this.longQTap = false;
 				this.cooldown = 25;
 			}
 			else if (this.shortQTap){
-				this.ability_manager.perform("roll");
+				this.ability_manager.perform("charge");
 				this.shortQTap = false;
 				this.cooldown = 25;
 			}
@@ -854,30 +1035,143 @@ class Player extends Entity{
 	}
 
 	draw(context){
-		context.fillStyle = this.colour;
-		context.fillRect(this.x, this.y, this.length, this.height);
+		context.drawImage(
+			this.sprite,
+			this.frame * TILE_SIZE,
+			this.direction * TILE_SIZE,
+			TILE_SIZE,
+			TILE_SIZE,
+
+			this.x,
+			this.y,
+			this.length,
+			this.height
+		);
+
+		// health bar
 		context.fillStyle = "red";
-		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
-		
-		
-		context.fillStyle = "purple";
-		context.fillRect(0,0,100,100);
-		context.font = "50px Arial";
-		context.fillStyle = "black";
-		context.fillText("Score: "+this.score,10,80);
-		context.font = "20px Arial";
-		context.fillText("Curr Health: "+this.curr_health, 10, 130);
-		context.fillText("Max Health: "+this.max_health, 10, 130+20);
-		context.fillText("Speed: "+this.speed, 10, 130+40);
-		context.fillText("Strength: "+this.strength, 10, 130+60);
+		context.fillRect(
+			this.x,
+			this.y - 10,
+			(this.curr_health / this.max_health) * this.length,
+			5
+		);
 
 
+		this.draw_player_stats(context);
+		this.ability_manager.draw_abilities_ui(context, this.width);
+		
+	}
+	draw_player_stats(context){
+		const panelX = 20;
+		const panelY = 20;
+		const panelW = 300;
+		const panelH = 220;
+
+		const bg = "#141816";
+		const panel = "#1d241f";
+		const panelLight = "#283128";
+		const stone = "#3a443d";
+		const moss = "#5e7a52";
+		const accent = "#8fbf72";
+		const gold = "#d7c27a";
+		const text = "#e6e2d3";
+		const muted = "#9ea08f";
+
+		context.shadowColor = "rgba(0,0,0,0.45)";
+		context.shadowBlur = 10;
+		context.shadowOffsetY = 4;
+
+		context.fillStyle = panel;
+		context.fillRect(panelX, panelY, panelW, panelH);
+
+		context.shadowBlur = 0;
+		context.shadowOffsetY = 0;
+
+		context.strokeStyle = stone;
+		context.lineWidth = 3;
+		context.strokeRect(panelX, panelY, panelW, panelH);
+
+		context.fillStyle = panelLight;
+		context.fillRect(panelX, panelY, panelW, 36);
+
+		context.font = "bold 20px Georgia";
+		context.fillStyle = gold;
+		context.fillText("PLAYER STATS", panelX + 16, panelY + 24);
+
+
+		const scoreX = panelX + 15;
+		const scoreY = panelY + 48;
+		const scoreW = panelW - 30;
+		const scoreH = 52;
+
+		context.fillStyle = bg;
+		context.fillRect(scoreX, scoreY, scoreW, scoreH);
+
+		context.strokeStyle = gold;
+		context.lineWidth = 2;
+		context.strokeRect(scoreX, scoreY, scoreW, scoreH);
+
+		context.font = "14px Arial";
+		context.fillStyle = muted;
+		context.textAlign = "center";
+		context.fillText(
+			"SCORE",
+			scoreX + scoreW / 2,
+			scoreY + 16
+		);
+
+		context.font = "bold 30px Georgia";
+		context.fillStyle = gold;
+		context.fillText(
+			this.score,
+			scoreX + scoreW / 2,
+			scoreY + 40
+		);
+
+		context.textAlign = "left";
+
+		context.font = "18px Arial";
+		context.fillStyle = text;
+		context.fillText("Health", panelX + 18, panelY + 125);
+
+		context.fillStyle = bg;
+		context.fillRect(panelX + 95, panelY + 110, 160, 18);
+
+		let hpWidth = (this.curr_health / this.max_health) * 160;
+
+		context.fillStyle = moss;
+		context.fillRect(panelX + 95, panelY + 110, hpWidth, 18);
+
+		context.strokeStyle = stone;
+		context.strokeRect(panelX + 95, panelY + 110, 160, 18);
+
+		context.font = "14px Arial";
+		context.fillStyle = muted;
+		context.fillText(
+			this.curr_health + " / " + this.max_health,
+			panelX + 112,
+			panelY + 124
+		);
+
+		context.font = "18px Arial";
+		context.fillStyle = text;
+		context.fillText("Speed", panelX + 18, panelY + 160);
+
+		context.fillStyle = accent;
+		context.fillText(this.speed, panelX + 220, panelY + 160);
+
+
+		context.fillStyle = text;
+		context.fillText("Strength", panelX + 18, panelY + 192);
+
+		context.fillStyle = accent;
+		context.fillText(this.strength, panelX + 220, panelY + 192);
 	}
 	claim_boost(boost){
 		let garbage_can = boost.get_claimed();
 		let [amount, type] = [garbage_can.amount, garbage_can.type];
 		this[type] = this[type] + amount;
-		console.log("Claimed boost of",type,"with value",amount,"which amounts to",this[type]);
 	}
 
 
@@ -909,12 +1203,13 @@ class AbilityManager{
 		return false;
 	}
 	perform(name){
-		this.sfx_manager.play_sound("player_dash");
 		if (this.current_abilities[name]){
 			if (this.current_abilities[name] === 0){
 				return;
 			}
 			else{
+				this.sfx_manager.play_sound("player_dash");
+
 				this.current_abilities[name].use();
 			}
 		}
@@ -940,7 +1235,56 @@ class AbilityManager{
 
 			}
 		}
+
 	}
+	draw_abilities_ui(context, canvas_width) {
+		context.save();
+		canvas_width = canvas.width;
+		const padding = 10;
+
+		let x = canvas_width - padding - TILE_SIZE*2;
+		let y = padding;
+
+		for (let name in this.current_abilities) {
+			let ability = this.current_abilities[name];
+
+			if (!ability || ability === 0) continue;
+
+			// icon
+			context.drawImage(
+				ability.image,
+				x,
+				y,
+				TILE_SIZE,
+				TILE_SIZE
+			);
+
+			// level badge (bottom-right corner)
+			context.fillStyle = "white";
+			context.font = "bold 14px Arial";
+			context.textAlign = "right";
+			context.textBaseline = "bottom";
+
+			context.fillText(
+				this.to_roman(ability.level),
+				x + TILE_SIZE - 4,
+				y + TILE_SIZE - 2
+			);
+
+			x -= TILE_SIZE + padding;
+		}
+		context.restore();
+	}
+	to_roman(num) {
+		const roman = {
+			1: "I",
+			2: "II",
+			3: "III"
+		};
+		return roman[num] || "";
+	}
+
+
 }
 
 class Ability{
@@ -950,9 +1294,9 @@ class Ability{
 		this.level = 1;
 		this.max_level = 3;
 		this.levels = {}
+		this.image = new Image();
 	}
 	use(){
-		console.log("Used",this,this.level);
 		this[this.levels[this.level]]();
 	}
 	level_up(){
@@ -962,9 +1306,6 @@ class Ability{
 	}
 	set_level(lvl){
 		this.level = lvl;
-	}
-	draw(context){
-
 	}
 }
 
@@ -976,6 +1317,10 @@ class Smash extends Ability{
 			2 : "double_smash",
 			3 : "mega_smash"
 		}
+        load_assets([
+			{"var" : this.image, "url" : "static/assets/extra/smash_icon.png"}
+		], blank)
+
 	}
 	smash(){
 		this.player.ranged_attack();
@@ -997,6 +1342,10 @@ class Roll extends Ability{
 			2 : "prolonged_roll",
 			3 : "damage_roll"
 		}
+        load_assets([
+			{"var" : this.image, "url" : "static/assets/extra/roll_icon.png"}
+		], blank)
+
 	}
 	roll(){
 		this.player.invulnerability = true;
@@ -1020,6 +1369,10 @@ class Charge extends Ability{
 			2 : "faster_charge",
 			3 : "explosion_charge"
 		}
+        load_assets([
+			{"var" : this.image, "url" : "static/assets/extra/charge_icon.png"}
+		], blank)
+
 	}
 	charge(){
 		this.player.speed = this.player.speed*1.5;
@@ -1048,7 +1401,7 @@ class StatBoost{
 			{type : "curr_health", colour : "pink"}, 
 			{type : "max_health", colour : "orange"}];
 		this.boost = choose(this.available_boosts);
-		this.amount = randint(1,5);
+		this.amount = randint(1,2);
 		this.x; this.y;
 		//[this.x,this.y] = this.find_a_spawn_place();
 		this.height = 15;
@@ -1057,7 +1410,6 @@ class StatBoost{
 	find_a_spawn_place(){
 		let distance = game_manager.current_level.distance_to_player;
 		let possible_choice_in_tiles = [];
-		console.log(distance);
 		for (let row = 2; row < distance.length-2; row++){
 			for (let col = 2; col < distance[0].length-2; col++){
 				let curr_dist = distance[row][col];
@@ -1080,17 +1432,51 @@ class StatBoost{
 
 	}
 	draw(context){
+		context.save();
 		if (!this.x){
-			[this.x,this.y] = this.find_a_spawn_place();
+			[this.x, this.y] = this.find_a_spawn_place();
 		}
-		context.fillStyle = this.boost.colour;
-		context.fillRect(this.x, this.y, this.length,this.height);
-		context.font = Math.floor(this.height/1.5)+"px Arial";
-		context.fillStyle = "black";
-		if (this.boost.colour === "brown"){context.fillStyle = "white";}
-		context.fillText("$",this.x+this.length/3,this.y+(this.height-this.height/3));
 
+		const size = this.length;
+
+		// center inside tile
+		const drawX = this.x + (TILE_SIZE - size) / 2;
+		const drawY = this.y + (TILE_SIZE - size) / 2;
+
+		// rounded rectangle helper (inline so you don’t need extra code)
+		const r = 4;
+		context.beginPath();
+		context.moveTo(drawX + r, drawY);
+		context.arcTo(drawX + size, drawY, drawX + size, drawY + size, r);
+		context.arcTo(drawX + size, drawY + size, drawX, drawY + size, r);
+		context.arcTo(drawX, drawY + size, drawX, drawY, r);
+		context.arcTo(drawX, drawY, drawX + size, drawY, r);
+		context.closePath();
+
+		// fill
+		context.fillStyle = this.boost.colour;
+		context.fill();
+
+		// border (makes it pop)
+		context.strokeStyle = "rgba(0,0,0,0.35)";
+		context.stroke();
+
+		// text
+		context.font = `${Math.floor(size / 1.4)}px Arial`;
+		context.textAlign = "center";
+		context.textBaseline = "middle";
+
+		context.fillStyle = (this.boost.colour === "brown") ? "white" : "black";
+
+		context.fillText(
+			"X",
+			drawX + size / 2,
+			drawY + size / 2
+		);
+		context.restore();
 	}
+	
+
 	get_claimed(){
 		this.sfx_manager.play_sound("boost_collect_sound");
 		return {amount : this.amount, type : this.boost.type};
