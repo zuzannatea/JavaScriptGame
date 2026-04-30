@@ -13,9 +13,9 @@ class Entity{
 		this.length = 20;
 		this.height = 20;
 
-		this.speed = 5;
-		this.strength = 5;
-		this.max_health = 50;
+		this.speed = 2;
+		this.strength = 2;
+		this.max_health = 30;
 
 		this.curr_health = this.max_health;
 
@@ -65,7 +65,7 @@ class Entity{
 
 		if (xMove !== 0){
 			this.move_by(xMove,0);
-			if (this.tile_colliding() || this.entity_colliding()){
+			if (this.tile_colliding()){
 				this.move_by(-xMove,0);
 			} else {
 				moved = true;
@@ -73,7 +73,7 @@ class Entity{
 		}
 		if (yMove !== 0){
 			this.move_by(0,yMove);
-			if (this.tile_colliding() || this.entity_colliding()){
+			if (this.tile_colliding()){
 				this.move_by(0,-yMove);
 			} else {
 				moved = true;
@@ -93,6 +93,29 @@ class Entity{
 
 		return true;
  */	}
+	resolve_entity_overlap(){
+		for (let entity of game_manager.enemies){
+			if (!is_colliding(this, entity)) continue;
+
+			//push player in smallest overlap 
+			let overlapX = Math.min(this.x + this.length - entity.x, entity.x + entity.length - this.x);
+			let overlapY = Math.min(this.y + this.height - entity.y, entity.y + entity.height - this.y);
+
+			if (overlapX < overlapY){
+				if (this.x < entity.x){
+					this.x -= overlapX;
+				} else {
+					this.x += overlapX;
+				}
+			} else {
+				if (this.y < entity.y){
+					this.y -= overlapY;
+				} else {
+					this.y += overlapY;
+				}
+			}
+		}
+	}
 	move_by(xMove,yMove){
 		this.x = this.x + xMove;
 		this.y = this.y + yMove;
@@ -467,6 +490,7 @@ class Zombie extends Enemy{
 			{"var" : this.sprite, "url" : "static/assets/sprites/devout-green.png"}
 		], blank)
 
+		this.speed = 1;
 		this.colour = "teal";
 	}
 	update(current_level, priority=0){
@@ -500,10 +524,10 @@ class Zombie extends Enemy{
 class Swarmer extends Enemy{
 	constructor(width, height,player) {
 		super(width, height,player);
-		this.speed = 3;
+		this.speed = 2;
 		this.speed_modifier = 1.05;
-		this.base_speed = 3;
-		this.max_health = 25;
+		this.base_speed = 2;
+		this.max_health = 15;
 		this.colour = "liliac";
 		this.friends = [];
         load_assets([
@@ -614,7 +638,7 @@ class Charger extends Enemy{
 	constructor(width, height,player) {
 		super(width, height,player);
 		this.speed = 1.5;
-		this.max_health = 60;
+		this.max_health = 40;
         load_assets([
 			{"var" : this.sprite, "url" : "static/assets/sprites/conjurer-green.png"}
 		], blank)
@@ -780,29 +804,77 @@ class Charger extends Enemy{
 
 }
 class Splitter extends Enemy{
-	constructor(width, height,player,lives=3) {
-		super(width, height,player);
+	constructor(length, height,player,lives=3) {
+		super(length, height,player);
 		this.colour = "lime";
         load_assets([
 			{"var" : this.sprite, "url" : "static/assets/sprites/conjurer-blue.png"}
 		], blank)
-
+		this.speed = 1.5;
 		if (lives != 3){
-			[this.lives, this.x, this.y, this.width, this.height] = lives;
+			[this.lives, this.x, this.y, this.length, this.height] = lives;
 		}
 		else{
 			this.lives = lives;
 		}
-		if (lives === 2){this.max_health = 40;}
-		if (lives === 1){this.max_health = 30;}
+		if (lives === 2){this.max_health = 20;}
+		if (lives === 1){this.max_health = 10;}
 		
 	}
 	die(){
-		if (this.lives > 1){
-			game_manager.add_entity(Splitter,this.lives-1,this.x+(randint(-1,1)*TILE_SIZE),this.y+(randint(-1,1)*TILE_SIZE), this.width*0.75, this.height*0.75);
-			game_manager.add_entity(Splitter,this.lives-1, this.x+(randint(-1,1)*TILE_SIZE), this.y+(randint(-1,1)*TILE_SIZE), this.width*0.75, this.height*0.75);
-		}
-		game_manager.remove_entity(this);
+    if (this.lives > 1){
+        let offsets = [
+            [-1,  0],
+            [ 1,  0],
+            [ 0, -1],
+            [ 0,  1],
+        ];
+        for (let child = 0; child < 2; child++){
+            let spawned = false;
+            for (let [dr, dc] of offsets){
+                let try_x = this.x + dc * TILE_SIZE;
+                let try_y = this.y + dr * TILE_SIZE;
+                let new_length = Math.max(Math.floor(this.length * 0.75), 8);
+                let new_height = Math.max(Math.floor(this.height * 0.75), 8);
+                //for all 4 corners!!!
+                let tiles = [
+                    [Math.floor(try_y / TILE_SIZE),Math.floor(try_x / TILE_SIZE)],
+                    [Math.floor(try_y / TILE_SIZE),Math.floor((try_x + new_length) / TILE_SIZE)],
+                    [Math.floor((try_y + new_height) / TILE_SIZE),Math.floor(try_x / TILE_SIZE)],
+                    [Math.floor((try_y + new_height) / TILE_SIZE),Math.floor((try_x + new_length) / TILE_SIZE)],
+                ];
+                let clear = true;
+                for (let [row, col] of tiles){
+                    if (!game_manager.current_level.get_tile(row, col).access){
+                        clear = false;
+                        break;
+                    }
+                }
+                if (clear){
+                    let child_entity = new Splitter(
+                        canvas.width, canvas.height, this.player,
+                        [this.lives-1, try_x, try_y, new_length, new_height]
+                    );
+                    child_entity.spawn_set = true;
+                    game_manager.enemies.push(child_entity);
+                    spawned = true;
+                    break;
+                }
+            }
+            //if no adj tile free
+            if (!spawned){
+                let child_entity = new Splitter(
+                    canvas.width, canvas.height, this.player,
+                    [this.lives-1, this.x, this.y, 
+                     Math.max(Math.floor(this.length * 0.75), 8), 
+                     Math.max(Math.floor(this.height * 0.75), 8)]
+                );
+                child_entity.spawn_set = true;
+                game_manager.enemies.push(child_entity);
+            }
+        }
+    }
+    game_manager.remove_entity(this);
 	}
 
 
@@ -812,7 +884,7 @@ class Teleporter extends Enemy{
 		super(width, height, player);
 		this.colour = "pink";
 		this.speed = 2;
-		this.max_health = 65;
+		this.max_health = 45;
 		this.buffering_timestamp;
 		this.teleporting_timestamp = Date.now() + 2500;
         load_assets([
@@ -854,9 +926,10 @@ class Teleporter extends Enemy{
 		current_level.set_warning_tiles(chosen.x, chosen.y, Date.now() + 2000);
 		this.buffering_timestamp = Date.now()+2000;
 		this.teleporting_timestamp = Date.now() + 15000;
-		this.colour = "white";//placeholder!!
-		let [chosen_x, chosen_y] = [chosen.x * TILE_SIZE, chosen.y * TILE_SIZE];
-		this.move_instantly(chosen_x, chosen_y);
+		//placeholder!!
+		this.colour = "white";
+		let [pixel_y, pixel_x] = [chosen.x * TILE_SIZE, chosen.y * TILE_SIZE];
+		this.move_instantly(pixel_x, pixel_y);
 		return;
 	}
 	can_teleport(){
@@ -912,6 +985,9 @@ class Teleporter extends Enemy{
 			this.colour = "orange";
 			this.attack_charge();
 		}
+		else{
+			this.hunt(current_level,priority);
+		}
 		this.animate();
 
 	}
@@ -934,7 +1010,7 @@ class Player extends Entity{
 		this.extraMoves = [];
 
 		this.speed = 2;
-		this.strength = 7;
+		this.strength = 8;
 		
 		this.pressedKeys = new Set();
 
@@ -1068,8 +1144,10 @@ class Player extends Entity{
 			this.attack();
 		}
 		this.animate();
+		this.resolve_entity_overlap();
 
 		if (this.cooldown <= 0){
+			this.check_rescue();
 			if (this.pressedKeys.has("specialMoveModifier")){
 				this.ability_manager.perform("roll");
 				this.cooldown = 25;
@@ -1247,8 +1325,48 @@ class Player extends Entity{
 		let [amount, type] = [garbage_can.amount, garbage_can.type];
 		this[type] = this[type] + amount;
 	}
+	check_rescue(){
+		let tiles = this.get_current_tiles();
+		let blocked = false;
+		for (let [row, col] of tiles){
+			if (!game_manager.current_level.get_tile(row, col).access){
+				blocked = true;
+				break;
+			}
+		}
+		if (!blocked){return;}
 
+		let start_row = Math.floor(this.y / TILE_SIZE);
+		let start_col = Math.floor(this.x / TILE_SIZE);
+		let rows = game_manager.current_level.map.length;
+		let cols = game_manager.current_level.map[0].length;
+		let visited = [];
+		for (let r = 0; r < rows; r++){
+			visited.push([]);
+			for (let c = 0; c < cols; c++){
+				visited[r][c] = false;
+			}
+		}
+		let queue = [[start_row, start_col]];
+		visited[start_row][start_col] = true;
+		while (queue.length > 0){
+			let [row,col] = queue.shift();
+			let tile = game_manager.current_level.get_tile(row,col);
+			if (tile.access){
+				this.x = col * TILE_SIZE;
+				this.y = row * TILE_SIZE;
+				return;
+			}
+			for (let [nr,nc] of [[row-1,col], [row+1,col], [row,col-1],[row,col+1]]){
+				if (nr >= 0 && nc >= 0 && nr < rows && nc < cols && !visited[nr][nc]){
+					visited[nr][nc] = true;
+					queue.push([nr, nc]);
+			}
+		}
 
+	}
+
+	}
 }
 
 class AbilityManager{

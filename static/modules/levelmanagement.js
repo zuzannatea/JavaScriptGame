@@ -11,14 +11,14 @@ const level_details = {
         stat_boosts : 2,
         score_needed : 0
     },
-    1 : {
+    3 : {
         enemies : {Zombie : 2, Swarmer : 6},
         stat_boosts : 3,
         score_needed : 0
     },
-    3 : {
-        enemies : {Charger : 4,
-            Zombie : 4
+    1 : {
+        enemies : {Splitter : 2,
+            Zombie : 1
         },
         stat_boosts : 1,
         score_needed : 0
@@ -460,6 +460,8 @@ class Level{
 						row : row, 
 						col : col,
 						row2 : row+1,
+                        x : col * TILE_SIZE,
+                        y : row * TILE_SIZE,
                         length : TILE_SIZE,
                         height : TILE_SIZE,
                         value : distance[row][col]
