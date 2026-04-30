@@ -6,6 +6,17 @@
     <title>Game</title>
     <link rel="stylesheet" href="{{ url_for('static',filename='main.css') }}"/>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static',filename='console.ico') }}">
+    <script>
+        let URLS = {
+            logout: "{{ url_for('logout') }}",
+            leaderboard: "{{ url_for('leaderboard') }}",
+            register: "{{ url_for('register') }}",
+            rules: "{{ url_for('rules') }}",
+            credits: "{{ url_for('credits') }}",
+            index: "{{ url_for('index') }}",
+            continue_as_guest: "{{ url_for('continue_as_guest') }}"
+        };
+</script>
 
     {% block head %}
     {% endblock %}

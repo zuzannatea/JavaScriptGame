@@ -1,6 +1,5 @@
 import { game_manager } from "../main.js";
 
-
 class UIManager{
     constructor(keybinds){
         this.ui_states = {
@@ -50,7 +49,7 @@ class UIManager{
     }
     async continue_as_guest(){
         try {
-            let response = await fetch("/continue_as_guest",
+            let response = await fetch(URLS["continue_as_guest"],
                 {method : "POST",
                 credentials: "same-origin"
                 }
@@ -60,16 +59,10 @@ class UIManager{
                 let ps = document.querySelectorAll("header p");
                 ps[0].innerHTML = data.user_id;
                 ps[2].firstElementChild.innerHTML = "Logout";
-                ps[2].firstElementChild.href = "{{ url_for('logout') }}";
+                ps[2].firstElementChild.href = URLS["logout"];
                 ps[1].firstElementChild.innerHTML = "Leaderboard";
-                ps[1].firstElementChild.href = "{{ url_for('leaderboard') }}";
+                ps[1].firstElementChild.href = URLS["leaderboard"];
 
-/*                 let p1 = document.querySelector("header p:first-child");
-                let p2_a = document.querySelector("header p:last-child a");
-                p1.innerHTML = data.user_id;
-                p2_a.innerHTML = "Logout";
-                p2_a.href = "{{ url_for('logout') }}";
- */
                 this.progress();
                 return true;
             }
@@ -86,7 +79,7 @@ class UIManager{
     create_button_with_link(caption,destination){
         let button = document.createElement("button");
         let link = document.createElement("a");
-        link.href = "/"+destination;
+        link.href = URLS[destination];
         link.innerHTML = caption;
         this.html_overlay.appendChild(button);
         button.appendChild(link);
@@ -372,7 +365,7 @@ class UIManager{
         text.innerHTML = "You finished with a score of "+score;
         this.html_overlay.appendChild(header);
         this.html_overlay.appendChild(text);
-        let restart = this.create_button_with_link("Restart", "");
+        let restart = this.create_button_with_link("Restart", "index");
         let leaderboard = this.create_button_with_link("See leaderboard", "leaderboard");
 
     }
