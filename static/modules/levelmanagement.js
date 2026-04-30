@@ -6,47 +6,46 @@ import { SFXManager } from "./sfx.js";
 
 
 const level_details = {
+    1 : {
+        enemies : {
+            Zombie : 3
+        },
+        stat_boosts : 3,
+        score_needed : 20
+    },
     2 : {
-        enemies : {Zombie : 4, Charger : 1},
-        stat_boosts : 2,
-        score_needed : 0
+        enemies : {Zombie : 2, Charger : 2},
+        stat_boosts : 3,
+        score_needed : 50
     },
     3 : {
-        enemies : {Zombie : 2, Swarmer : 6},
+        enemies : {Swarmer : 6},
         stat_boosts : 3,
-        score_needed : 0
+        score_needed : 100
     },
-    1 : {
+    4 : {
+        enemies : {Teleporter : 2,
+            Zombie : 1
+        },
+        stat_boosts : 2,
+        score_needed : 120
+    },
+    5 : {
         enemies : {Splitter : 2,
             Zombie : 1
         },
-        stat_boosts : 1,
-        score_needed : 0
-    },
-    4 : {
-        enemies : {Splitter : 2,
-            Zombie : 4,
-            Charger : 1
-        },
-        stat_boosts : 2,
-        score_needed : 0
-    },
-    5 : {
-        enemies : {Teleporter : 2,
-            Zombie : 4
-        },
-        stat_boosts : 2,
-        score_needed : 0
+        stat_boosts : 3,
+        score_needed : 140
     },
     6 : {
         enemies : {Charger : 1,
             Teleporter : 1,
             Swarmer : 5,
             Splitter : 2,
-            Zombie : 4
+            Zombie : 1
         },
-        stat_boosts : 3,
-        score_needed : 0
+        stat_boosts : 5,
+        score_needed : 170
     }
 
 }
@@ -322,10 +321,12 @@ class GameManager{
             this.player.invincibility = this.ui_manager.cheats.invincibility;
             if (this.ui_manager.cheats.set_score){
                 this.player.score = this.ui_manager.cheats.set_score;
+                this.ui_manager.cheats.set_score = null;
             }
             for (let boost in this.ui_manager.cheats.boosts){
                 if (this.ui_manager.cheats.boosts[boost]){
                     this.player.ability_manager.set_level(boost, this.ui_manager.cheats.boosts[boost]);
+                    this.ui_manager.cheats.boosts[boost] = null;
                 }
             }
         }
@@ -449,7 +450,7 @@ class Level{
         this.player = player;
     }
     spawn_exit(){
-        if (this.exit){return;}
+        if (this.exit){return this.exit;}
         if (!this.distance_to_player || this.distance_to_player.length === 0){return;}
         let possible_choice_in_tiles = [];
         let distance = this.distance_to_player;
@@ -694,10 +695,10 @@ class Level{
         let player_height = 20;
 
         let player_tiles = [
-            [Math.floor(startCol / TILE_SIZE), Math.floor(startRow / TILE_SIZE)],
-            [Math.floor(startCol / TILE_SIZE), Math.floor((startRow + player_length) / TILE_SIZE)],
-            [Math.floor((startCol + player_height) / TILE_SIZE),Math.floor(startRow / TILE_SIZE)],
-            [Math.floor((startCol + player_height) / TILE_SIZE),Math.floor((startRow + player_length) / TILE_SIZE)],
+            [Math.floor(startRow / TILE_SIZE), Math.floor(startCol / TILE_SIZE)],
+            [Math.floor(startRow / TILE_SIZE), Math.floor((startCol + player_length) / TILE_SIZE)],
+            [Math.floor((startRow + player_height) / TILE_SIZE),Math.floor(startCol / TILE_SIZE)],
+            [Math.floor((startRow + player_height) / TILE_SIZE),Math.floor((startCol + player_length) / TILE_SIZE)],
         ];
 
         for (let [row,col] of player_tiles){

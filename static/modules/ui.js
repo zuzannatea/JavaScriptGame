@@ -375,7 +375,8 @@ class UIManager{
 
         let finished_abilities = [];
         for (let ability in ability_manager.current_abilities){
-            if (ability_manager.current_abilities[ability].level === ability_manager.current_abilities[ability].max_level){
+            let ab = ability_manager.current_abilities[ability];
+            if (ab && ab !== 0 && ab.level === ab.max_level){
                 finished_abilities.push(ability);
             }
         }
@@ -390,7 +391,7 @@ class UIManager{
 
         let name = "choice";
         for (let ability in ability_manager.current_abilities){
-            if (!(ability in finished_abilities)){
+            if (!(finished_abilities.includes(ability))){
                 let label = this.create_radio(name,ability);
                 this.html_overlay.appendChild(label);
             }

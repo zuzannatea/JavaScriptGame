@@ -13,7 +13,7 @@ class Entity{
 		this.length = 20;
 		this.height = 20;
 
-		this.speed = 2;
+		this.speed = 1;
 		this.strength = 2;
 		this.max_health = 30;
 
@@ -183,7 +183,7 @@ class Enemy extends Entity{
 		this.spawn_set = false;
 		this.points = 10;
 		//let point = this.pick_a_point();
-		this.speed = 2.5;
+		this.speed = 2;
 		this.target = {x : this.x, y : this.y};
 
 		this.colour = "yellow";
@@ -1009,7 +1009,8 @@ class Player extends Entity{
 		this.score = 0;
 		this.extraMoves = [];
 
-		this.speed = 2;
+		this.speed = 4;
+		this.base_speed = this.speed;
 		this.strength = 8;
 		
 		this.pressedKeys = new Set();
@@ -1018,6 +1019,7 @@ class Player extends Entity{
 		this.cooldown = 0; 
 		this.longQTap = false;
 		this.shortQTap = false;
+		
 
 
 		this.invincibility = false;
@@ -1100,7 +1102,7 @@ class Player extends Entity{
 		let distance = this.speeding_timestamp - Date.now();
 		if (distance < 0){
 			this.speeding_timestamp = undefined;
-			this.speed = Math.ceil(this.speed/2);
+			this.speed = this.base_speed;
 			return true;
 		}
 		return false;
@@ -1110,7 +1112,6 @@ class Player extends Entity{
 		this.check_rolling();
 		this.check_charging();
 	}
-
 
 	update(){
 		this.check_abilities();
@@ -1149,17 +1150,22 @@ class Player extends Entity{
 		if (this.cooldown <= 0){
 			this.check_rescue();
 			if (this.pressedKeys.has("specialMoveModifier")){
+				console.log("SPECIAL");
 				this.ability_manager.perform("roll");
 				this.cooldown = 25;
 			
 			}
 			else if (this.longQTap){
+				console.log("LONGTAP");
 				this.ability_manager.perform("smash");
 				this.longQTap = false;
+				this.shortQTap = false;
 				this.cooldown = 25;
 			}
 			else if (this.shortQTap){
+				console.log("SHORTAP");
 				this.ability_manager.perform("charge");
+				this.longQTap = false;
 				this.shortQTap = false;
 				this.cooldown = 25;
 			}
@@ -1407,7 +1413,7 @@ class AbilityManager{
 		}
 	}
 	level_up(name){
-		if (this.current_abilities[name]){
+		if (name in this.current_abilities){
 			if (this.current_abilities[name] === 0){
 				this.gain_ability(name);
 			}
@@ -1489,6 +1495,7 @@ class Ability{
 		this.image = new Image();
 	}
 	use(){
+		console.log("USED ",this[this.levels[this.level]]);
 		this[this.levels[this.level]]();
 	}
 	level_up(){
@@ -1497,6 +1504,7 @@ class Ability{
 		}
 	}
 	set_level(lvl){
+		console.log("SET LEVEL ",lvl);
 		this.level = lvl;
 	}
 }
@@ -1567,6 +1575,7 @@ class Charge extends Ability{
 
 	}
 	charge(){
+		this.player.base_speed = this.player.speed;
 		this.player.speed = this.player.speed*1.5;
 		this.player.speeding_timestamp = Date.now() + 250;
 		this.player.attack();
