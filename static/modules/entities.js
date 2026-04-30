@@ -349,7 +349,7 @@ class Enemy extends Entity{
 
 	}
 	wander(){
-		if (this.target.length === 0 || is_in_range(this,this.target, 30)){
+		if (!this.target || is_in_range(this,this.target, 30)){
 			this.target = this.pick_a_point();
 		}
 		let xMove;
@@ -813,6 +813,7 @@ class Splitter extends Enemy{
 		this.speed = 1.5;
 		if (lives != 3){
 			[this.lives, this.x, this.y, this.length, this.height] = lives;
+			this.target = {x: this.x, y: this.y};
 		}
 		else{
 			this.lives = lives;
@@ -831,7 +832,9 @@ class Splitter extends Enemy{
         ];
         for (let child = 0; child < 2; child++){
             let spawned = false;
-            for (let [dr, dc] of offsets){
+			let child_offset = offsets.slice(child).concat(offsets.slice(0, child));
+
+            for (let [dr, dc] of child_offset){
                 let try_x = this.x + dc * TILE_SIZE;
                 let try_y = this.y + dr * TILE_SIZE;
                 let new_length = Math.max(Math.floor(this.length * 0.75), 8);
@@ -856,6 +859,7 @@ class Splitter extends Enemy{
                         [this.lives-1, try_x, try_y, new_length, new_height]
                     );
                     child_entity.spawn_set = true;
+					child_entity.target = child_entity.pick_a_point();
                     game_manager.enemies.push(child_entity);
                     spawned = true;
                     break;
@@ -876,6 +880,29 @@ class Splitter extends Enemy{
     }
     game_manager.remove_entity(this);
 	}
+	hunt(current_level, priority=0){
+		let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+		this.setDirection(xMove, yMove);
+
+		let attempts = 0;
+		while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
+			this.snap_to_tile();
+			//make altern
+			priority = (priority + 1) % 2;
+			[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			if (++attempts > 4) break;
+		}
+	}
+	entity_colliding(){
+		for (let entity of game_manager.enemies){
+			if (is_colliding(this,entity) && this != entity && (!entity instanceof Splitter)){
+				return entity;
+			}
+		}
+		return false;
+	}
+
+
 
 
 }
@@ -1609,7 +1636,7 @@ class StatBoost{
 		this.length = 15;
 	}
 	find_a_spawn_place(){
-		console.log("OOKING FOR SPAWN PLACE");
+		console.log("OLOKING FOR SPAWN PLACE");
 		let distance = game_manager.current_level.distance_to_player;
 		//console.log("distance length:", distance.length);
 

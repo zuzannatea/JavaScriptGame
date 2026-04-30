@@ -6,7 +6,7 @@ import { SFXManager } from "./sfx.js";
 
 
 const level_details = {
-    1 : {
+    5 : {
         enemies : {
             Zombie : 3
         },
@@ -30,7 +30,7 @@ const level_details = {
         stat_boosts : 2,
         score_needed : 120
     },
-    5 : {
+    1 : {
         enemies : {Splitter : 2,
             Zombie : 1
         },
