@@ -65,7 +65,7 @@ class Entity{
 
 		if (xMove !== 0){
 			this.move_by(xMove,0);
-			if (this.tile_colliding()){
+			if (this.tile_colliding() || this.entity_colliding()){
 				this.move_by(-xMove,0);
 			} else {
 				moved = true;
@@ -73,13 +73,14 @@ class Entity{
 		}
 		if (yMove !== 0){
 			this.move_by(0,yMove);
-			if (this.tile_colliding()){
+			if (this.tile_colliding() || this.entity_colliding()){
 				this.move_by(0,-yMove);
 			} else {
 				moved = true;
 			}
 		}
-		if (!moved){
+		return moved;
+/* 		if (!moved){
 			return false;
 		}
 		let entity_colliding = this.entity_colliding();
@@ -91,7 +92,7 @@ class Entity{
 		}
 
 		return true;
-	}
+ */	}
 	move_by(xMove,yMove){
 		this.x = this.x + xMove;
 		this.y = this.y + yMove;
@@ -154,11 +155,11 @@ class Enemy extends Entity{
 		this.sprite = new Image();
 
 		this.canvas = [width, height];
-		this.x;
-		this.y;
+		this.x = 0;
+		this.y = 0;
+		this.spawn_set = false;
 		this.points = 10;
-		let point = this.pick_a_point();
-		[this.x, this.y] = [point.x, point.y];
+		//let point = this.pick_a_point();
 		this.speed = 2.5;
 		this.target = {x : this.x, y : this.y};
 
@@ -184,7 +185,7 @@ class Enemy extends Entity{
 
 		if (xMove !== 0){
 			this.move_by(xMove,0);
-			if (this.tile_colliding()){
+			if (this.tile_colliding() || this.entity_colliding()){
 				this.move_by(-xMove,0);
 			} else {
 				moved = true;
@@ -192,7 +193,7 @@ class Enemy extends Entity{
 		}
 		if (yMove !== 0){
 			this.move_by(0,yMove);
-			if (this.tile_colliding()){
+			if (this.tile_colliding() || this.entity_colliding()){
 				this.move_by(0,-yMove);
 			} else {
 				moved = true;
@@ -201,14 +202,14 @@ class Enemy extends Entity{
 		if (!moved){
 			return false;
 		}
-		let entity_colliding = this.entity_colliding();
+/* 		let entity_colliding = this.entity_colliding();
 		if (entity_colliding){
 			this.move_by(-xMove,-yMove);
 			//let distance = this.estimate_distance(this,entity_colliding,xMove,yMove);
 			//this.move_by(distance[0],distance[1]);
 			return false; 
 		}
-		let dx = this.x - startX;
+ */		let dx = this.x - startX;
 		let dy = this.y - startY;
 
 		if (Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001){
@@ -229,6 +230,40 @@ class Enemy extends Entity{
 			else this.direction = 3; 
 		}
 	}
+	pick_a_spawn_point(){
+		let distance = game_manager.current_level.distance_to_player;
+		if (!distance || distance.length === 0){ 
+			this.x = this.canvas[0]/2;
+			this.y = this.canvas[1]/2;
+			return;
+		}
+		let possible_choices = [];
+		for (let row = 1; row < distance.length - 1; row++){
+			for (let col = 1; col < distance[0].length - 1; col++){
+				let curr_dist = distance[row][col];
+				if (curr_dist > 8 && curr_dist < Number.MAX_SAFE_INTEGER){
+					possible_choices.push({ row, col });
+				}
+			}
+		}
+
+		if (possible_choices.length === 0){
+			for (let row = 1; row < distance.length - 1; row++){
+				for (let col = 1; col < distance[0].length - 1; col++){
+					if (distance[row][col] < Number.MAX_SAFE_INTEGER){
+						possible_choices.push({ row, col });
+					}
+				}
+			}
+		}
+
+		let chosen = choose(possible_choices);
+		console.log(chosen);
+		this.x = chosen.col * TILE_SIZE;
+		this.y = chosen.row * TILE_SIZE;
+		return;
+	}
+	
 
 	pick_a_point(){
 		let cleared = false; 
@@ -253,6 +288,11 @@ class Enemy extends Entity{
 	}
 
 	update(current_level, priority=0){
+		if (!this.spawn_set){
+			this.spawn_set = true;
+			this.pick_a_spawn_point();
+			return;
+		}
 		if (current_level.distance_to_player.length===0){return;}
 
 		this.isMoving = false;
@@ -276,9 +316,11 @@ class Enemy extends Entity{
 		let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
 		this.setDirection(xMove, yMove);
 
+		let attempts = 0;
 		while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
 			this.snap_to_tile();
 			[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			if (++attempts > 4){break;}
 		} 
 
 	}
@@ -316,25 +358,25 @@ class Enemy extends Entity{
 		let [y_current, x_current] = current_tiles[0];
 		if (y_current < distance.length-1){
 			possible_tiles.push({
-				move : [1,0],
+				move : [0,1],
 				tile : [y_current+1,x_current],
 				value : distance[y_current+1][x_current]});
 		}
 		if (y_current > 0){
 			possible_tiles.push({
-				move : [-1,0],
+				move : [0,-1],
 				tile : [y_current-1, x_current],
 				value : distance[y_current-1][x_current]});
 		}
 		if (x_current < distance[0].length-1){
 			possible_tiles.push({
-				move : [0,-1],
+				move : [-1,0],
 				tile : [y_current, x_current-1],
 				value : distance[y_current][x_current-1]});
 		}
 		if (x_current > 0){
 			possible_tiles.push({
-				move : [0,1],
+				move : [1,0],
 				tile : [y_current, x_current+1],
 				value : distance[y_current][x_current+1]});
 		}
@@ -378,6 +420,7 @@ class Enemy extends Entity{
 	}	
 	
 	draw(context){
+		if (!this.spawn_set){return;}
 		context.drawImage(
 			this.sprite,
 			this.frame * TILE_SIZE,
@@ -426,6 +469,12 @@ class Zombie extends Enemy{
 		this.colour = "teal";
 	}
 	update(current_level, priority=0){
+		if (!this.spawn_set){
+			this.spawn_set = true;
+			this.pick_a_spawn_point();
+			return;
+		}
+
 		this.isMoving = false;
 
 		if (current_level.distance_to_player.length===0){return;}
@@ -435,9 +484,11 @@ class Zombie extends Enemy{
 		}
 		else{
 			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+			let attempts = 0;
 			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
 				this.snap_to_tile();
 				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+				if (++attempts > 4){break;}
 			} 
 		}
 		this.animate();
@@ -520,6 +571,12 @@ class Swarmer extends Enemy{
 		}
 	}
 	update(current_level, priority=0){
+		if (!this.spawn_set){
+			this.spawn_set = true;
+			this.pick_a_spawn_point();
+			return;
+		}
+
 		this.isMoving = false;
 
 		if (current_level.distance_to_player.length===0){return;}
@@ -686,6 +743,12 @@ class Charger extends Enemy{
 		}
 	}
 	update(current_level, priority=0){
+		if (!this.spawn_set){
+			this.spawn_set = true;
+			this.pick_a_spawn_point();
+			return;
+		}
+
 		this.isMoving = false;
 
 		if (current_level.distance_to_player.length===0){return;}
@@ -702,9 +765,11 @@ class Charger extends Enemy{
 			this.charging = false;
 			let [xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
 			this.setDirection(xMove, yMove);
+			let attempts = 0;
 			while(!this.try_move(xMove * this.speed/2, yMove * this.speed/2)){
 				this.snap_to_tile();
 				[xMove, yMove] = this.get_next_best_move(current_level.distance_to_player, priority);
+				if (++attempts > 4){break;}
 			} 
 		}
 		this.animate();
@@ -800,6 +865,7 @@ class Teleporter extends Enemy{
 		return false;
 	}
 	draw(context){
+		if (!this.spawn_set){return;}
 		if (this.check_buffering_time()){return;}
 		context.fillStyle = "red";
 		context.fillRect(this.x, this.y - 10, (this.curr_health/this.max_health)*this.length, 5);
@@ -817,6 +883,12 @@ class Teleporter extends Enemy{
 	}
 
 	update(current_level, priority=0){
+		if (!this.spawn_set){
+			this.spawn_set = true;
+			this.pick_a_spawn_point();
+			return;
+		}
+
 		this.isMoving = false;
 
 		if (current_level.distance_to_player.length===0){return;}
@@ -1424,9 +1496,9 @@ class StatBoost{
 		}
 		let chosen = choose(possible_choice_in_tiles);
 		//let tile_x = (TILE_SIZE/2 + chosen.x) - (this.length/TILE_SIZE)/2;
-		let pixel_x = chosen.x * TILE_SIZE;
+		let pixel_y = chosen.x * TILE_SIZE;
 		//let tile_y = (TILE_SIZE/2 + chosen.y) - (this.height/TILE_SIZE)/2;
-		let pixel_y = chosen.y * TILE_SIZE;
+		let pixel_x = chosen.y * TILE_SIZE;
 		return [pixel_x, pixel_y]
 
 
