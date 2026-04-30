@@ -233,10 +233,16 @@ class GameManager{
     check_exiting(){
         let player_tiles = this.player.get_current_tiles();
         for (let tile of player_tiles){
-            if ((tile[1] === this.exit_tiles.x1 || tile[1] === this.exit_tiles.x2) && tile[0] === this.exit_tiles.y){
+            let [row,col] = tile;
+            if (col === this.exit_tiles.col && 
+                (row === this.exit_tiles.row1 || row === this.exit_tiles.row2)
+            ){
+                return true; 
+            }
+/*             if ((tile[1] === this.exit_tiles.x1 || tile[1] === this.exit_tiles.x2) && tile[0] === this.exit_tiles.y){
                 return true;
             }
-        }
+ */     }
         return false;
     }
     progress_to_next_level(){
@@ -436,9 +442,9 @@ class Level{
 			for (let col = 0; col < distance[0].length; col++){
 				if ((distance[row][col] === 4) && distance[row+1][col] < Number.MAX_SAFE_INTEGER){
 					possible_choice_in_tiles.push({
-						x : row, 
-						y : col,
-						x2 : row+1,
+						row : row, 
+						col : col,
+						row2 : row+1,
                         length : TILE_SIZE,
                         height : TILE_SIZE,
                         value : distance[row][col]
@@ -450,15 +456,22 @@ class Level{
         if (dist(this.player,chosen) > 300){
             chosen = choose(possible_choice_in_tiles);
         }
-        this.map[chosen.y][chosen.x] = TileType.portal;
-        this.map[chosen.y][chosen.x2] = TileType.portal;
+        this.map[chosen.row][chosen.col] = TileType.portal;
+        this.map[chosen.row2][chosen.col] = TileType.portal;
         
-        this.exit = {x1 : chosen.x1, x2 : chosen.x2, y : chosen.y}
+        this.exit = {row1 : chosen.row, row2 : chosen.row2, col : chosen.col}
         return this.exit;
     }
     get_adjacent_tiles_with_weight(row,col){
+        if (!this.map[row] || !this.map[row][col]) {
+            console.error(`Bad tile access at row:${row} col:${col}, map is ${this.map.length}x${this.map[0].length}`);
+            return [];
+        }
+
         let adj_tiles = [];
         let type;
+        let max_row = this.map.length - 1;
+        let max_col = this.map[0].length - 1;
         if (row > 0){
             type = this.map[row-1][col].access ? 1 : Number.MAX_SAFE_INTEGER; 
             adj_tiles.push({
@@ -466,7 +479,7 @@ class Level{
                 value : type
             });
         }
-        if (row < this.map.length - 1){
+        if (row < max_row){
             type = this.map[row+1][col].access ? 1 : Number.MAX_SAFE_INTEGER; 
             adj_tiles.push({
                 tile : [row+1, col],
@@ -480,7 +493,7 @@ class Level{
                 value : type
             });
         }
-        if (col < this.map[0].length - 1){
+        if (col < max_col){
             type = this.map[row][col+1].access ? 1 : Number.MAX_SAFE_INTEGER; 
             adj_tiles.push({
                 tile : [row, col+1],
@@ -501,7 +514,7 @@ class Level{
         let adj = [];
         for (let row = 0; row < this.map.length; row++){
             adj.push([]);
-            for (let col = 0; col < this.map[0].length; col++){
+            for (let col = 0; col < this.map[row].length; col++){
                 let adj_tiles = this.get_adjacent_tiles_with_weight(row,col);
                 adj[row].push([]);
                 for (let tile of adj_tiles){
@@ -567,9 +580,6 @@ class Level{
         let startY = Math.floor(canvas.height/2);
         let playerPosX = Math.floor(this.player.x);
         let playerPosY = Math.floor(this.player.y);
-/*         let offsetX = ((startX - playerPosX) / TILE_SIZE);
-        let offsetY = ((startY - playerPosY) / TILE_SIZE);
- */   
 
         let player_tiles = this.player.get_current_tiles();
         let [y,x] = player_tiles[0];
@@ -578,10 +588,10 @@ class Level{
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
             this.player_pos = {x : this.player.x, y : this.player.y};
         }
-        for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r += 1){
-            for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
+        for (let row = 0; row < Math.floor(canvas.height/TILE_SIZE); row++){
+            for (let col = 0; col < Math.floor(canvas.width/TILE_SIZE); col++){
                 //context.fillStyle = this.map[r][c];
-                let tile = this.map[r][c];
+                let tile = this.map[row][col];
                 let img;
                 if (tile.frames) {
                     let frame = Math.floor(Date.now() / 250) % tile.frequency;
@@ -590,13 +600,18 @@ class Level{
                     img = tile.img;
                 }
 
-                context.drawImage(img, (r)*TILE_SIZE, (c)*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                context.drawImage(img, col*TILE_SIZE, row*TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
 
 
     }
     get_tile(x,y){
+        if (!this.map[x] || this.map[x][y] === undefined){
+            console.log(`get_tile out of bounds: x=${x}, y=${y}, map=${this.map.length}x${this.map[0].length}`);
+            return { access: false };
+        }
+
         if (this.map[x]){
             return this.map[x][y];
         }
@@ -604,17 +619,18 @@ class Level{
 
     generate_level(){
         this.map = [];
-        for (let r = 0; r < Math.floor((canvas.width)/TILE_SIZE); r+= 1){
+        for (let row = 0; row < Math.floor(canvas.height/TILE_SIZE); row++){
             this.map.push([]);
-            for (let c = 0; c < Math.floor((canvas.height)/TILE_SIZE); c += 1){
+            for (let col = 0; col < Math.floor(canvas.width/TILE_SIZE); col++){
                 let chance = Math.random();
-                if (chance > 0.65){
+                this.map[row][col] = Math.random() > 0.65 ? TileType.wall : TileType.floor;
+/*                 if (chance > 0.65){
                     this.map[this.map.length - 1][c] = TileType.wall;
                 }
                 else{
                     this.map[this.map.length - 1][c] = TileType.floor;
                 }
-            }
+ */            }
         }
         for (let i = 0; i < 5; i += 1){
             this.clean_map();
@@ -622,6 +638,16 @@ class Level{
         this.add_presets();
         this.add_world_border();
         this.flood_fill();
+        //CHECK CHECK CHECK
+        for (let row = 0; row < this.map.length; row++) {
+            if (!this.map[row] || this.map[row].length !== this.map[0].length) {
+                console.log(`Row ${row} is bad:`, this.map[row]);
+            }
+        }
+        console.log(`Map dimensions: ${this.map.length} rows x ${this.map[0].length} cols`);
+        console.log(`Expected: ${Math.floor(canvas.height/TILE_SIZE)} rows x ${Math.floor(canvas.width/TILE_SIZE)} cols`);
+
+        //END OF CHECK END OF CHE
         if (!this.check_viability()){
             this.generate_level();
         }
@@ -630,9 +656,9 @@ class Level{
     check_viability(){
         let floor_counter = 0;
         let general_counter = 0;
-        for (let r = 0; r < Math.floor(canvas.width/TILE_SIZE); r += 1){
-            for (let c = 0; c < Math.floor(canvas.height/TILE_SIZE); c += 1){
-                if (this.map[r][c] === TileType.floor){
+        for (let row = 0; row < Math.floor(canvas.height/TILE_SIZE); row++){
+            for (let col = 0; col < Math.floor(canvas.width/TILE_SIZE); col++){
+                if (this.map[row][col] === TileType.floor){
                     floor_counter += 1;
                 }
                 general_counter += 1;
@@ -644,13 +670,13 @@ class Level{
         else{ return false;}
     }
     add_presets(){
-        let startX = Math.floor(canvas.width/TILE_SIZE/2);
-        let startY = Math.floor(canvas.height/TILE_SIZE/2);
-        if (this.map[startX][startY] != TileType.floor){
+        let startCol = Math.floor(canvas.width/TILE_SIZE/2);
+        let startRow = Math.floor(canvas.height/TILE_SIZE/2);
+        if (this.map[startRow][startCol] != TileType.floor){
             let queue = [];
             let connection = false;
-            this.map[startX][startY] = TileType.floor;
-            let neighbours = this.get_neighbours(startX,startY,4);
+            this.map[startRow][startCol] = TileType.floor;
+            let neighbours = this.get_neighbours(startCol,startRow,4);
             while (!connection){
                 for (let neighbour of neighbours){
                     this.map[neighbour[0]][neighbour[1]] = TileType.floor;
@@ -677,20 +703,22 @@ class Level{
         }
     }
     clean_map(){
-        let newMap = this.map;
-        for (let x = 0; x < Math.floor(canvas.width/TILE_SIZE); x += 1){
-            for (let y = 0; y < Math.floor(canvas.height/TILE_SIZE); y += 1){
-                let wallCount = this.count_wall_neighbours(x,y,8);
-                if (this.map[x][y] === TileType.wall){
-                    newMap[x][y] = wallCount >= 2 ? TileType.wall : TileType.floor;
+        let newMap = [];
+        for (let row = 0; row < this.map.length; row++){
+            newMap.push([]);
+            for (let col = 0; col < this.map[0].length; col++){
+                let wallCount = this.count_wall_neighbours(row,col,8);
+                if (this.map[row][col] === TileType.wall){
+                    newMap[row][col] = wallCount >= 2 ? TileType.wall : TileType.floor;
                 }
                 else{
-                    newMap[x][y] = wallCount >= 8 ? TileType.wall : TileType.floor;
+                    newMap[row][col] = wallCount >= 8 ? TileType.wall : TileType.floor;
 
                 }
             }
         }
         this.map = newMap;
+        return;
     }
     flood_fill(){
         let start_tiles = this.player.get_current_tiles();
@@ -740,7 +768,7 @@ class Level{
                         //bc we want to discount diagonals, so -1,1 or 1,1 etcc
                         continue;
                     }
-                    if (x+r > 0 && x+r < Math.floor(canvas.width/TILE_SIZE) && y+c > 0 && y + c < Math.floor(canvas.height/TILE_SIZE)){
+                    if (x+r >= 0 && x+r < Math.floor(canvas.height/TILE_SIZE) && y+c >= 0 && y + c < Math.floor(canvas.width/TILE_SIZE)){
                         neighbours.push([x+r, y+c]);
                     }
                 }
@@ -756,20 +784,28 @@ class Level{
         return false;
     }
     count_wall_neighbours(x,y,num_of_neighbours){
-        let counter = -1;
-        for (let r = -1; r < 2; r += 1){
-            for (let c = -1; c < 2; c += 1){
-                if (num_of_neighbours === 4){
-                    if (r != 0 && c != 0){
+        let counter = 0;
+        let max_row = this.map.length;
+        let max_col = this.map[0].length;
+        for (let row = -1; row < 2; row++){
+            for (let col = -1; col < 2; col++){
+                if (row === 0 && col === 0){continue;}
+                if (num_of_neighbours === 4 && row !== 0 && col !== 0){
                         continue;
+                }
+                let nr = x + row;
+                let nc = y + col;
+                if (nr >= 0 && nr < max_row && nc >= 0 && nc < max_col){
+                    if (this.map[nr][nc] === TileType.wall){
+                        counter++;
                     }
                 }
                 //if (this.map[x+r][y+c] != undefined){ <<<< throws an error, fix!!
-                if ((x+c > 0 && x+c < Math.floor(canvas.width/TILE_SIZE) && y+r > 0 && y+r < Math.floor(canvas.height/TILE_SIZE))){ 
+/*                 if ((x+c > 0 && x+c < Math.floor(canvas.width/TILE_SIZE) && y+r > 0 && y+r < Math.floor(canvas.height/TILE_SIZE))){ 
                     if (this.map[x+c][y+r] === TileType.wall){
                         counter += 1;
                 }}
-            }
+ */            }
         }
         return counter;
     }

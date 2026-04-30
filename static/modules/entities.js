@@ -129,11 +129,11 @@ class Entity{
 		return false;
 	}
 	get_current_tiles(x = this.x, y = this.y, length = this.length, height = this.height){
-		let pos1 = [Math.floor(x/TILE_SIZE), Math.floor(y/TILE_SIZE)];
-		let pos2 = [Math.floor((x+length)/TILE_SIZE), Math.floor(y/TILE_SIZE)];
-		let pos3 = [Math.floor((x+length)/TILE_SIZE), Math.floor((y+height)/TILE_SIZE)];
-		let pos4 = [Math.floor(x/TILE_SIZE), Math.floor((y+height)/TILE_SIZE)];
-		return [pos1, pos2, pos3, pos4];	
+		let pos1 = [Math.floor(y/TILE_SIZE), Math.floor(x/TILE_SIZE)];
+		let pos2 = [Math.floor(y/TILE_SIZE), Math.floor((x+length)/TILE_SIZE)];
+		let pos3 = [Math.floor((y+height)/TILE_SIZE), Math.floor((x+length)/TILE_SIZE)];
+		let pos4 = [Math.floor((y+height)/TILE_SIZE), Math.floor(x/TILE_SIZE)];
+		return [pos1, pos2, pos3, pos4];    
 	}
 	
 	entity_colliding(){
