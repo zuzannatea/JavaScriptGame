@@ -233,8 +233,9 @@ class Enemy extends Entity{
 	pick_a_spawn_point(){
 		let distance = game_manager.current_level.distance_to_player;
 		if (!distance || distance.length === 0){ 
-			this.x = this.canvas[0]/2;
-			this.y = this.canvas[1]/2;
+			let point = this.pick_a_point();
+			this.x = point.x;
+			this.y = point.y;
 			return;
 		}
 		let possible_choices = [];
@@ -532,7 +533,7 @@ class Swarmer extends Enemy{
 		if (best_friend.entity){
 			return {x : best_friend.entity.x, y : best_friend.entity.y};
 		}
-		return this.pick_a_point;
+		return this.pick_a_point();
 	}
 	hunt_a_friend(){
 		if (this.target.length === 0 || is_in_range(this,this.target, 30)){
@@ -574,6 +575,7 @@ class Swarmer extends Enemy{
 		if (!this.spawn_set){
 			this.spawn_set = true;
 			this.pick_a_spawn_point();
+			console.log("SWARMER - picked spawn point", this.x,this.y);
 			return;
 		}
 
@@ -589,7 +591,7 @@ class Swarmer extends Enemy{
 			this.speed = this.base_speed;
 		}
 		//behaviour 
-		if (this.count_friends() < 1 && this.count_friends() > 0){
+		if (this.count_friends() <= 1){
 			this.target = this.find_a_friend();
 		}
 		else if (this.count_friends() < 3){
@@ -1140,8 +1142,8 @@ class Player extends Entity{
 		const panelW = 300;
 		const panelH = 220;
 
-		const bg = "#141816";
-		const panel = "#1d241f";
+		const bg = "#14181652";
+		const panel = "#1d241f80";
 		const panelLight = "#283128";
 		const stone = "#3a443d";
 		const moss = "#5e7a52";
@@ -1480,11 +1482,16 @@ class StatBoost{
 		this.length = 15;
 	}
 	find_a_spawn_place(){
+		console.log("OOKING FOR SPAWN PLACE");
 		let distance = game_manager.current_level.distance_to_player;
+		//console.log("distance length:", distance.length);
+
 		let possible_choice_in_tiles = [];
 		for (let row = 2; row < distance.length-2; row++){
 			for (let col = 2; col < distance[0].length-2; col++){
 				let curr_dist = distance[row][col];
+            	//console.log(`row:${row} col:${col} dist:${curr_dist}`);
+
 				if (curr_dist > 5 && curr_dist < Number.MAX_SAFE_INTEGER){
 					possible_choice_in_tiles.push({
 						x : row, 
@@ -1494,11 +1501,14 @@ class StatBoost{
 				}
 			}
 		}
+		//console.log(possible_choice_in_tiles);
 		let chosen = choose(possible_choice_in_tiles);
 		//let tile_x = (TILE_SIZE/2 + chosen.x) - (this.length/TILE_SIZE)/2;
 		let pixel_y = chosen.x * TILE_SIZE;
 		//let tile_y = (TILE_SIZE/2 + chosen.y) - (this.height/TILE_SIZE)/2;
 		let pixel_x = chosen.y * TILE_SIZE;
+    	//console.log("possible choices:", possible_choice_in_tiles.length);
+		//return null;
 		return [pixel_x, pixel_y]
 
 
@@ -1506,7 +1516,8 @@ class StatBoost{
 	draw(context){
 		context.save();
 		if (!this.x){
-			[this.x, this.y] = this.find_a_spawn_place();
+			return;
+			//[this.x, this.y] = this.find_a_spawn_place();
 		}
 
 		const size = this.length;

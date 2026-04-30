@@ -6,12 +6,12 @@ import { SFXManager } from "./sfx.js";
 
 
 const level_details = {
-    1 : {
+    2 : {
         enemies : {Zombie : 4, Charger : 1},
         stat_boosts : 2,
         score_needed : 0
     },
-    2 : {
+    1 : {
         enemies : {Zombie : 2, Swarmer : 6},
         stat_boosts : 3,
         score_needed : 0
@@ -265,6 +265,17 @@ class GameManager{
     }
     construct_game(context){
         this.current_level.generate_level();
+
+        let player_tiles = this.player.get_current_tiles();
+        let [row, col] = player_tiles[0];
+        let check_path = this.current_level.get_shortest_path([row,col],[row,col])
+        if (check_path === -1){
+            this.construct_game();
+            return;
+        }
+        this.current_level.distance_to_player = check_path;
+        this.current_level.player_pos = { x: this.player.x, y: this.player.y };
+
         this.construct_enemies();
         this.construct_stat_boosts();
         return;
@@ -282,7 +293,10 @@ class GameManager{
         let num_of_boosts = level_details[this.current_level.id].stat_boosts;
         let curr_boosts = this.stat_boosts.length;
         for (let i = curr_boosts; i < num_of_boosts; i++){
-            this.stat_boosts.push(new StatBoost(this.sfx_manager));
+            let boost = new StatBoost(this.sfx_manager);
+            let spawn = boost.find_a_spawn_place();
+            if (spawn){[boost.x, boost.y] = spawn};
+            this.stat_boosts.push(boost);
         }
     }
     draw(context){
@@ -436,6 +450,7 @@ class Level{
     }
     spawn_exit(){
         if (this.exit){return;}
+        if (!this.distance_to_player || this.distance_to_player.length === 0){return;}
         let possible_choice_in_tiles = [];
         let distance = this.distance_to_player;
 		for (let row = 0; row < distance.length - 1; row++){
@@ -584,7 +599,7 @@ class Level{
         let player_tiles = this.player.get_current_tiles();
         let [y,x] = player_tiles[0];
 
-        if (dist(this.player_pos, this.player) > TILE_SIZE*2){
+        if ((dist(this.player_pos, this.player) > TILE_SIZE*2) || (this.distance_to_player.length === 0)){
             this.distance_to_player = this.get_shortest_path([y,x], [y,x]);
             this.player_pos = {x : this.player.x, y : this.player.y};
         }
@@ -636,21 +651,20 @@ class Level{
             this.clean_map();
         }
         this.add_presets();
-        this.add_world_border();
         this.flood_fill();
+        this.add_world_border();
         //CHECK CHECK CHECK
         for (let row = 0; row < this.map.length; row++) {
             if (!this.map[row] || this.map[row].length !== this.map[0].length) {
                 console.log(`Row ${row} is bad:`, this.map[row]);
             }
         }
-        console.log(`Map dimensions: ${this.map.length} rows x ${this.map[0].length} cols`);
-        console.log(`Expected: ${Math.floor(canvas.height/TILE_SIZE)} rows x ${Math.floor(canvas.width/TILE_SIZE)} cols`);
 
         //END OF CHECK END OF CHE
         if (!this.check_viability()){
             this.generate_level();
         }
+        console.log("LEVLE GNERATED");
         
     }
     check_viability(){
@@ -664,19 +678,56 @@ class Level{
                 general_counter += 1;
             }
         }
-        if (floor_counter/general_counter > 0.65){
+        console.log(floor_counter/general_counter);
+        if (floor_counter/general_counter > 0.45){
             return true;
         }
         else{ return false;}
     }
+    //for making sure player isnt stuck
     add_presets(){
-        let startCol = Math.floor(canvas.width/TILE_SIZE/2);
-        let startRow = Math.floor(canvas.height/TILE_SIZE/2);
-        if (this.map[startRow][startCol] != TileType.floor){
+        let startCol = Math.floor(canvas.width/2);
+        let startRow = Math.floor(canvas.height/2);
+        let player_length = 20;
+        let player_height = 20;
+
+        let player_tiles = [
+            [Math.floor(startCol / TILE_SIZE), Math.floor(startRow / TILE_SIZE)],
+            [Math.floor(startCol / TILE_SIZE), Math.floor((startRow + player_length) / TILE_SIZE)],
+            [Math.floor((startCol + player_height) / TILE_SIZE),Math.floor(startRow / TILE_SIZE)],
+            [Math.floor((startCol + player_height) / TILE_SIZE),Math.floor((startRow + player_length) / TILE_SIZE)],
+        ];
+
+        for (let [row,col] of player_tiles){
+            this.map[row][col] = TileType.floor;
+        }
+
+
+        for (let start_tile of player_tiles){
+            if (this.is_connected_to_floor(start_tile)){continue;}
+
+            let queue = [start_tile];
+            let connected = false; 
+
+            while (!connected && queue.length > 0){
+                let [row,col] = queue.shift();
+                let neighbours = this.get_neighbours(row,col,4);
+
+                for (let [nr,nc] of neighbours){
+                    if (this.map[nr][nc] === TileType.floor){
+                        connected = true;
+                        break;
+                    }
+                    this.map[nr][nc] = TileType.floor;
+                    queue.push([nr,nc]);
+                }
+            }
+        }
+/*         if (this.map[startRow][startCol] != TileType.floor){
             let queue = [];
             let connection = false;
             this.map[startRow][startCol] = TileType.floor;
-            let neighbours = this.get_neighbours(startCol,startRow,4);
+            let neighbours = this.get_neighbours(startRow,startCol,4);
             while (!connection){
                 for (let neighbour of neighbours){
                     this.map[neighbour[0]][neighbour[1]] = TileType.floor;
@@ -689,8 +740,16 @@ class Level{
                 neighbours = this.get_neighbours(next[0],next[1],4);
             }
         }
-
+ */
     }
+    is_connected_to_floor([row,col]){
+        let neighbours = this.get_neighbours(row, col, 4);
+        for (let [nr, nc] of neighbours){
+            if (this.map[nr][nc] === TileType.floor) return true;
+        }
+        return false;
+    }
+
     add_world_border(){
         for (let col = 0; col < this.map[0].length; col++){
             this.map[0][col] = TileType.wall;

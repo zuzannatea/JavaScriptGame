@@ -18,12 +18,12 @@ function init(){
     context = canvas.getContext("2d");
     html_overlay = document.getElementById("html-overlay");
 
-    const w = Math.floor(window.innerWidth / TILE_SIZE) * TILE_SIZE;
-    const h = Math.floor(window.innerHeight / TILE_SIZE) * TILE_SIZE; 
+    const w = (Math.floor(window.innerWidth / TILE_SIZE) * TILE_SIZE);
+    const h = (Math.floor(window.innerHeight / TILE_SIZE) * TILE_SIZE) - TILE_SIZE; 
     canvas.width = w;
     canvas.height = h;
-    html_overlay.style.width = `${w}px`;
-    html_overlay.style.height = `${h}px`;
+    html_overlay.style.width = `${w+TILE_SIZE}px`;
+    html_overlay.style.height = `${h+TILE_SIZE}px`;
 
     game_manager = new GameManager();
     //player = new Player();
